@@ -19,54 +19,40 @@ async function main() {
         console.log("Erro ao carregar página. Tentando novamente...");
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
     }
+    const currentUrl = page.url();
 
-    console.log("Página carregada. Verificando se há verificação de robô...");
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
-    const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
-
-    if (hasCaptcha) {
-        console.log("Verificação de robô detectada! Aguardando você resolver...");
-        console.log("Por favor, resolva a verificação de robô na página.");
-    }
-
-    console.log("Preenchendo formulário de login automaticamente...");
-    
-    // Preencher os campos do formulário
-    try {
-        await page.waitForSelector('input[name="login"]', { timeout: 10000 });
-        await page.type('input[name="login"]', login);
-        console.log("Campo login preenchido");
-        
-        await page.waitForSelector('input[name="senha"]', { timeout: 10000 });
-        await page.type('input[name="senha"]', password);
-        console.log("Campo senha preenchido");
-        
-        await page.waitForSelector('input[name="chaveAcesso"]', { timeout: 10000 });
-        await page.type('input[name="chaveAcesso"]', key);
-        console.log("Campo chaveAcesso preenchido");
-        
-        // Aguardar um pouco antes de submeter
+    if (currentUrl.includes("login")) {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Tentar encontrar e clicar no botão de login
-        const submitButton = await page.$('button[type="submit"]');
-        if (submitButton) {
-            await submitButton.click();
-            console.log("Formulário submetido automaticamente");
-        } else {
-            console.log("Botão de submit não encontrado. Pressione ENTER para continuar...");
+
+        const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
+
+        if (hasCaptcha) {
+            console.log("Verificação de robô detectada! Aguardando você resolver...");
+        }
+
+        try {
+            await page.waitForSelector('input[name="login"]', { timeout: 10000 });
+            await page.type('input[name="login"]', login);
+
+            await page.waitForSelector('input[name="senha"]', { timeout: 10000 });
+            await page.type('input[name="senha"]', password);
+
+            await page.waitForSelector('input[name="chaveAcesso"]', { timeout: 10000 });
+            await page.type('input[name="chaveAcesso"]', key);
+
+            const submitButton = await page.$('button[type="submit"]');
+            if (submitButton) {
+                await submitButton.click();
+            } else {
+                readlineSync.question("");
+            }
+
+        } catch (error) {
+            console.log("Erro ao preencher formulário automaticamente:", error);
             readlineSync.question("");
         }
-    } catch (error) {
-        console.log("Erro ao preencher formulário automaticamente:", error);
-        console.log("Por favor, faça o login manualmente na página aberta.");
-        console.log("Depois de fazer o login, pressione ENTER para continuar...");
-        readlineSync.question("");
     }
 
-    console.log("Verificando se o login foi bem-sucedido...");
-    const currentUrl = page.url();
 
     if (currentUrl.includes("dashboard") || currentUrl.includes("home") || !currentUrl.includes("login")) {
         console.log("Login realizado com sucesso!");
