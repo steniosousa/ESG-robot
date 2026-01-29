@@ -9,7 +9,17 @@ async function main() {
     const identification = {
         load_value: "100.00",
         quantity: 18,
+        load_service: 40.85,
+        type: "FIO",
+        predominant_product: "FIO",
+        recipient: "1025 -"
     }
+
+    const taxes = {
+        vehicle: "AAW1H16",
+        driver_cpf: "022.280.219-70"
+    }
+
     console.log("Iniciando robô de web scraping para EGS...");
 
     const browser = await puppeteer.launch({ headless: false, defaultViewport: null, args: ["--no-sandbox", "--disable-setuid-sandbox"] });
@@ -61,13 +71,9 @@ async function main() {
 
     try {
         await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
-        console.log("Elemento box-emissor-hover encontrado! Navegando para página de emissão de CTE...");
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-        console.log("Página de emissão de CTE carregada com sucesso!");
         await page.waitForSelector("button[data-original-title='Novo']", { timeout: 10000 });
-        console.log("Botão 'Novo' encontrado!");
         await new Promise(resolve => setTimeout(resolve, 2000));
-        console.log("Botão 'Novo' clicado!");
         await page.click("button[data-original-title='Novo']");
     } catch (error) {
         console.log("Erro ao aguardar elemento box-emissor-hover ou navegar para CTE:", error);
@@ -76,14 +82,40 @@ async function main() {
 
     try {
         await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
-
-        await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
         await page.type('input[name="valorCarga"]', identification.load_value);
-        await page.waitForSelector("input[name='qtdeCarga']", { timeout: 10000 });
+
+        await page.type('input[name="prodPredominante"]', identification.predominant_product);
+
+        await page.type('input[name="tipoCarga"]', identification.type);
+
         await page.type('input[name="qtdeCarga"]', identification.quantity.toString());
-    }
-    catch (error) {
+
+        await page.type('input[name="valorServico"]', identification.load_service.toString());
+
+
+        await page.click('li[id="cteNormal"]');
+
+        console.log("CT-e normal selecionado!");
+    } catch (error) {
         console.log("Erro ao aguardar elemento input[name='valorCarga']:", error);
+    }
+
+
+    try {
+        await page.waitForSelector("input[name='IDVEICULO']", { timeout: 10000 });
+        await page.type('input[placeholder="Pesquise o veículo"]', taxes.vehicle);
+        await page.waitForSelector("ul[ng-repeat='data in searchData']", { timeout: 10000 });
+        await page.click("ul[ng-repeat='data in searchData'] li:first-child");
+
+        // await page.waitForSelector("input[name='IDMOTORISTA']", { timeout: 30000 });
+
+        // await page.type('input[placeholder=" Pesquise o cadastro..."]', taxes.driver_cpf);
+        // await new Promise(resolve => setTimeout(resolve, 1000));
+        // await page.waitForSelector("ul[ng-repeat='data in searchData']", { timeout: 10000 });
+        // await page.click("ul[ng-repeat='data in searchData'] li:first-child");
+
+    } catch (error) {
+        console.log("Erro ao preencher destinatário:", error);
     }
     // if (currentUrlAfterLogin.includes("dashboard") || currentUrlAfterLogin.includes("home") || !currentUrlAfterLogin.includes("login")) {
     //     console.log("Login realizado com sucesso!");
