@@ -18,16 +18,16 @@ let permissionRequests: Array<{ action: string; timestamp: number }> = [];
 function requestPermission(action: string): Promise<boolean> {
     console.log(`\n🔔 Aguardando permissão para: ${action}`);
     console.log('📱 Acesse a janela de controle para permitir ou negar');
-    
+
     return new Promise((resolve) => {
         pendingPermission = { action, resolve };
-        
+
         // Adicionar à lista de solicitações
         permissionRequests.push({
             action,
             timestamp: Date.now()
         });
-        
+
         // Timeout de 30 segundos se não houver resposta
         setTimeout(() => {
             if (pendingPermission && pendingPermission.action === action) {
@@ -37,9 +37,65 @@ function requestPermission(action: string): Promise<boolean> {
                 // Remover da lista
                 permissionRequests = permissionRequests.filter(req => req.action !== action);
             }
-        }, 30000);
+        }, 9000000);
     });
 }
+
+// Função para limpar e preencher campo
+async function clearAndType(selector: string, value: string) {
+    await page.click(selector);
+    await page.keyboard.down('Control');
+    await page.keyboard.press('a');
+    await page.keyboard.up('Control');
+    await page.type(selector, value);
+}
+
+async function clearAndSelectOption(name: string, value: string) {
+    try {
+        const wrapper = `egs-gcadastro[name="${name}"]`;
+
+        // 1. Limpar via botão X (Angular)
+        await page.evaluate((wrapper: any) => {
+            const el = document.querySelector(wrapper);
+            const btn = el?.querySelector('span#closeBtn') as HTMLElement;
+            if (btn && btn.offsetParent !== null) {
+                btn.click();
+                return true;
+            }
+            return false;
+        }, wrapper);
+
+
+        // 2. Abrir select
+        const inputInline = `${wrapper} input.editComboboxPdr`;
+        await page.waitForSelector(inputInline, { visible: true });
+        await page.click(inputInline);
+
+        // 3. Input real de busca
+        await page.waitForSelector(wrapper, { visible: true });
+
+        await page.click(wrapper, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+
+        await page.type(wrapper, value);
+
+
+        const firstOption = '#egs-select ul.keydownRows';
+        await page.waitForSelector(firstOption, { visible: true });
+
+        await page.click(firstOption);
+
+    } catch (err) {
+        console.error('Erro ao selecionar opção:', err);
+        throw err;
+    }
+}
+
+
+
+
+
+
 
 // Função para aguardar enquanto estiver pausado
 async function waitForResume(action?: string) {
@@ -101,20 +157,20 @@ function createControlServer() {
     app.post('/api/grant-permission', (req, res) => {
         const { action, granted } = req.body;
         console.log(`📝 Permissão para "${action}": ${granted ? 'CONCEDIDA' : 'NEGADA'}`);
-        
+
         // Processar permissão pendente
         if (pendingPermission && pendingPermission.action === action) {
             pendingPermission.resolve(granted);
             pendingPermission = null;
         }
-        
+
         res.json({ success: true });
     });
 
     // Endpoint para registrar nova solicitação de permissão
     app.post('/api/request-permission', (req, res) => {
         const { action } = req.body;
-        
+
         // Enviar para todos os clientes conectados via WebSocket ou polling
         res.json({ success: true, action });
     });
@@ -134,44 +190,45 @@ function createControlServer() {
 
 // Função para abrir janela de controle
 async function openControlWindow() {
-    const controlBrowser = await puppeteer.launch({ 
-        headless: false, 
+    const controlBrowser = await puppeteer.launch({
+        headless: false,
         defaultViewport: null,
         args: [
-            "--no-sandbox", 
+            "--no-sandbox",
             "--disable-setuid-sandbox",
             "--window-position=1400,100",  // Posicionar ao lado
             "--window-size=400,600"         // Tamanho da janela de controle
         ]
     });
-    
+
     controlPage = await controlBrowser.newPage();
     await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
     await controlPage.goto("http://localhost:3000");
-    
+
     return controlBrowser;
 }
 
 async function main() {
     // Iniciar servidor de controle
     createControlServer();
-    
+
     // Abrir janela de controle
     setTimeout(() => {
         openControlWindow();
     }, 2000);
-    
+
     const login = "FINANCEIRO"
     const password = "inter2026"
     const key = "50201"
 
     const identification = {
+        destination: "373.249.934-00",
         load_value: "100.00",
         quantity: 18,
         load_service: 40.85,
         type: "FIO",
         predominant_product: "FIO",
-        recipient: "1025 -"
+        service_recipient: 128.99
     }
 
     const taxes = {
@@ -183,8 +240,8 @@ async function main() {
     console.log("🌐 Janela de controle será aberta ao lado");
 
     await waitForResume();
-    
-    
+
+
     browser = await puppeteer.launch({ headless: false, defaultViewport: null, args: ["--no-sandbox", "--disable-setuid-sandbox"] });
     page = await browser.newPage();
 
@@ -192,7 +249,7 @@ async function main() {
 
     console.log("Acessando página de login...");
     await waitForResume();
-    
+
     try {
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
     } catch (error) {
@@ -239,20 +296,17 @@ async function main() {
 
     try {
         await waitForResume();
-        
-        const canNavigateCTE = await requestPermission("Navegar para página CTE");
-        if (!canNavigateCTE) {
-            console.log("❌ Permissão negada para navegar para CTE");
-        } else {
-            await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
-            await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-            await page.waitForSelector("button[data-original-title='Novo']", { timeout: 10000 });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            const canClickNew = await requestPermission("Clicar no botão Novo");
-            if (canClickNew) {
-                await page.click("button[data-original-title='Novo']");
-            }
+
+        // const canNavigateCTE = await requestPermission("Navegar para página CTE");
+        // if (!canNavigateCTE) {
+        //     console.log("❌ Permissão negada para navegar para CTE");
+        // } else {
+        // }
+        await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
+        await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
+        const canClickCopy = await requestPermission("Clicar no botão copiar");
+        if (canClickCopy) {
+            await page.click("button[data-original-title='Copiar']");
         }
     } catch (error) {
         console.log("Erro ao aguardar elemento box-emissor-hover ou navegar para CTE:", error);
@@ -260,40 +314,38 @@ async function main() {
 
     try {
         await waitForResume();
-        
-        // Solicitar permissão para preencher dados do CTE
-        const canFillCTE = await requestPermission("Preencher dados do CT-e");
+
+        const canFillCTE = await requestPermission("Preencher dados de Identificação");
         if (canFillCTE) {
-            await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
-            await page.type('input[name="valorCarga"]', identification.load_value);
+            // Usar a função para limpar, colar e selecionar destinatário
+            await clearAndSelectOption('destinatario', identification.destination);
 
-            await page.type('input[name="prodPredominante"]', identification.predominant_product);
+            // // Limpar e preencher campos
+            // await clearAndType('input[name="valorCarga"]', identification.load_value);
+            // await clearAndType('input[name="prodPredominante"]', identification.predominant_product);
+            // await clearAndType('input[name="tipoCarga"]', identification.type);
+            // await clearAndType('input[name="qtdeCarga"]', identification.quantity.toString());
+            // await clearAndType('input[name="valorServico"]', identification.service_recipient.toString());
+            // await clearAndType('input[name="valorReceber"]', identification.service_recipient.toString());
 
-            await page.type('input[name="tipoCarga"]', identification.type);
+            // await page.click('li[id="cteNormal"]');
 
-            await page.type('input[name="qtdeCarga"]', identification.quantity.toString());
-
-            await page.type('input[name="valorServico"]', identification.load_service.toString());
-
-            await page.click('li[id="cteNormal"]');
-
-            console.log("CT-e normal selecionado!");
+            // console.log("CT-e normal selecionado!");
         }
     } catch (error) {
-        console.log("Erro ao aguardar elemento input[name='valorCarga']:", error);
+        console.log(error)
     }
 
     try {
         await waitForResume();
-        
+
         // Solicitar permissão para preencher dados do veículo
         const canFillVehicle = await requestPermission("Preencher dados do veículo");
         if (canFillVehicle) {
-            await page.waitForSelector("input[name='IDVEICULO']", { timeout: 10000 });
-            await page.type('input[placeholder="Pesquise o veículo"]', taxes.vehicle);
-            await page.waitForSelector("ul[ng-repeat='data in searchData']", { timeout: 10000 });
-            await page.click("ul[ng-repeat='data in searchData'] li:first-child");
+            await clearAndSelectOption('IDVEICULO', taxes.vehicle);
         }
+        await page.waitForSelector("ul[ng-repeat='data in searchData']", { timeout: 10000 });
+        await page.click("ul[ng-repeat='data in searchData'] li:first-child");
     } catch (error) {
         console.log("Erro ao preencher destinatário:", error);
     }
