@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Controle do Robô ESG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .status {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+
+        .status.paused {
+            border-left-color: #ffc107;
+        }
+
+        .status.stopped {
+            border-left-color: #dc3545;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-value {
+            color: #666;
+        }
+
+        .status-value.running {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-value.paused {
+            color: #ffc107;
+            font-weight: 600;
+        }
+
+        .status-value.stopped {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn-pause:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e0a800, #d39e00);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(255, 193, 7, 0.4);
+        }
+
+        .btn-resume {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-resume:hover:not(:disabled) {
+            background: linear-gradient(135deg, #20c997, #198754);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: linear-gradient(135deg, #c82333, #bd2130);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(220, 53, 69, 0.4);
+        }
+
+        .permissions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .permission-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #007bff;
+        }
+
+        .permission-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .permission-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .permission-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-permit {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .btn-permit:hover {
+            background: #218838;
+        }
+
+        .btn-deny {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .btn-deny:hover {
+            background: #c82333;
+        }
+
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #a0aec0;
+        }
+
+        .log-entry {
+            margin-bottom: 3px;
+            padding: 2px 0;
+        }
+
+        .log-entry.success {
+            color: #68d391;
+        }
+
+        .log-entry.warning {
+            color: #fbb6ce;
+        }
+
+        .log-entry.error {
+            color: #fc8181;
+        }
+
+        .log-entry.info {
+            color: #63b3ed;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #333;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Robô ESG</h1>
+            <p class="subtitle">Painel de Controle</p>
+        </div>
+        
+        <div class="status" id="status">
+            <div class="status-item">
+                <span class="status-label">Status:</span>
+                <span class="status-value" id="status-text">Iniciando...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Execução:</span>
+                <span class="status-value" id="running-text">Aguardando</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Última ação:</span>
+                <span class="status-value" id="last-action">Nenhuma</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-pause" id="pause-btn" onclick="pauseProcess()">
+                ⏸️ Pausar
+            </button>
+            <button class="btn btn-resume" id="resume-btn" onclick="resumeProcess()" disabled>
+                ▶️ Retomar
+            </button>
+            <button class="btn btn-stop" id="stop-btn" onclick="stopProcess()">
+                ⏹️ Parar
+            </button>
+        </div>
+
+        <div class="permissions" id="permissions" style="display: none;">
+            <div style="font-weight: 600; margin-bottom: 10px; color: #856404;">
+                🔔 Solicitações de Permissão
+            </div>
+            <div id="permissions-list"></div>
+        </div>
+
+        <div class="log">
+            <div class="log-title">📋 Log de Eventos</div>
+            <div id="log-content">
+                <div class="log-entry info">[00:00:00] Sistema iniciado</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStatus = { isPaused: false, shouldStop: false, isRunning: false, permissionRequests: [] };
+        let knownPermissions = new Set();
+        let pendingPermissions = [];
+
+        // Atualizar status a cada 2 segundos
+        setInterval(updateStatus, 2000);
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                currentStatus = status;
+                
+                updateUI(status);
+                checkNewPermissions(status.permissionRequests || []);
+            } catch (error) {
+                console.error('Erro ao atualizar status:', error);
+                addLog('Erro ao conectar com o servidor', 'error');
+            }
+        }
+
+        function checkNewPermissions(permissionRequests) {
+            permissionRequests.forEach(request => {
+                const permissionKey = `${request.action}-${request.timestamp}`;
+                if (!knownPermissions.has(permissionKey)) {
+                    knownPermissions.add(permissionKey);
+                    addPermissionRequest(request.action, request.timestamp);
+                }
+            });
+        }
+
+        function addPermissionRequest(action, timestamp = Date.now()) {
+            // Verificar se já existe
+            const exists = pendingPermissions.find(p => p.action === action && p.timestamp === timestamp);
+            if (exists) return;
+            
+            const permission = {
+                id: timestamp,
+                action: action,
+                timestamp: timestamp
+            };
+            
+            pendingPermissions.push(permission);
+            updatePermissionsList();
+            
+            addLog(`🔔 Solicitação: ${action}`, 'info');
+            showNotification(`Solicitação: ${action}`, 'info');
+        }
+
+        function updateUI(status) {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            const runningText = document.getElementById('running-text');
+            const pauseBtn = document.getElementById('pause-btn');
+            const resumeBtn = document.getElementById('resume-btn');
+            const stopBtn = document.getElementById('stop-btn');
+
+            // Atualizar classes de status
+            statusDiv.className = 'status';
+            if (status.isPaused) {
+                statusDiv.classList.add('paused');
+            } else if (status.shouldStop || !status.isRunning) {
+                statusDiv.classList.add('stopped');
+            }
+
+            // Atualizar texto de status
+            if (status.shouldStop) {
+                statusText.textContent = 'Parado';
+                statusText.className = 'status-value stopped';
+                runningText.textContent = 'Finalizado';
+                runningText.className = 'status-value stopped';
+            } else if (status.isPaused) {
+                statusText.textContent = 'Pausado';
+                statusText.className = 'status-value paused';
+                runningText.textContent = 'Pausado';
+                runningText.className = 'status-value paused pulse';
+            } else if (status.isRunning) {
+                statusText.textContent = 'Executando';
+                statusText.className = 'status-value running';
+                runningText.textContent = 'Ativo';
+                runningText.className = 'status-value running';
+            } else {
+                statusText.textContent = 'Aguardando';
+                statusText.className = 'status-value';
+                runningText.textContent = 'Iniciando';
+                runningText.className = 'status-value';
+            }
+
+            // Atualizar estado dos botões
+            pauseBtn.disabled = status.isPaused || status.shouldStop || !status.isRunning;
+            resumeBtn.disabled = !status.isPaused || status.shouldStop;
+            stopBtn.disabled = status.shouldStop;
+        }
+
+        async function pauseProcess() {
+            try {
+                const response = await fetch('/api/pause', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('last-action').textContent = 'Pausado';
+                    addLog('Processo pausado', 'warning');
+                    showNotification('Processo pausado', 'warning');
+                }
+            } catch (error) {
+                console.error('Erro ao pausar:', error);
+                addLog('Erro ao pausar processo', 'error');
+            }
+        }
+
+        async function resumeProcess() {
+            try {
+                const response = await fetch('/api/resume', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('last-action').textContent = 'Retomado';
+                    addLog('Processo retomado', 'success');
+                    showNotification('Processo retomado', 'success');
+                }
+            } catch (error) {
+                console.error('Erro ao retomar:', error);
+                addLog('Erro ao retomar processo', 'error');
+            }
+        }
+
+        async function stopProcess() {
+            if (confirm('Tem certeza que deseja parar o processo?')) {
+                try {
+                    const response = await fetch('/api/stop', { method: 'POST' });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        document.getElementById('last-action').textContent = 'Parado';
+                        addLog('Processo parado', 'error');
+                        showNotification('Processo parado', 'error');
+                    }
+                } catch (error) {
+                    console.error('Erro ao parar:', error);
+                    addLog('Erro ao parar processo', 'error');
+                }
+            }
+        }
+
+        function addPermissionRequest(action) {
+            const permissionId = Date.now();
+            const permission = {
+                id: permissionId,
+                action: action,
+                timestamp: new Date()
+            };
+            
+            pendingPermissions.push(permission);
+            updatePermissionsList();
+            
+            addLog(`🔔 Solicitação: ${action}`, 'info');
+            showNotification(`Solicitação: ${action}`, 'info');
+        }
+
+        function updatePermissionsList() {
+            const permissionsDiv = document.getElementById('permissions');
+            const permissionsList = document.getElementById('permissions-list');
+            
+            if (pendingPermissions.length === 0) {
+                permissionsDiv.style.display = 'none';
+                return;
+            }
+            
+            permissionsDiv.style.display = 'block';
+            permissionsList.innerHTML = '';
+            
+            pendingPermissions.forEach(permission => {
+                const permissionItem = document.createElement('div');
+                permissionItem.className = 'permission-item';
+                permissionItem.innerHTML = `
+                    <div class="permission-title">📝 ${permission.action}</div>
+                    <div class="permission-buttons">
+                        <button class="btn-permit" onclick="grantPermission(${permission.id}, true)">
+                            ✅ Permitir
+                        </button>
+                        <button class="btn-deny" onclick="grantPermission(${permission.id}, false)">
+                            ❌ Negar
+                        </button>
+                    </div>
+                `;
+                permissionsList.appendChild(permissionItem);
+            });
+        }
+
+        async function grantPermission(permissionId, granted) {
+            const permission = pendingPermissions.find(p => p.id === permissionId);
+            if (!permission) return;
+            
+            try {
+                const response = await fetch('/api/grant-permission', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: permission.action,
+                        granted: granted
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    pendingPermissions = pendingPermissions.filter(p => p.id !== permissionId);
+                    updatePermissionsList();
+                    
+                    addLog(`${granted ? '✅' : '❌'} ${permission.action}: ${granted ? 'PERMITIDO' : 'NEGADO'}`, 
+                           granted ? 'success' : 'error');
+                    showNotification(`${permission.action}: ${granted ? 'Permitido' : 'Negado'}`, 
+                                   granted ? 'success' : 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao conceder permissão:', error);
+                addLog('Erro ao processar permissão', 'error');
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logContent = document.getElementById('log-content');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logContent.appendChild(logEntry);
+            logContent.scrollTop = logContent.scrollHeight;
+
+            // Manter apenas as últimas 30 entradas
+            while (logContent.children.length > 30) {
+                logContent.removeChild(logContent.firstChild);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            
+            if (type === 'success') {
+                notification.style.background = '#28a745';
+            } else if (type === 'error') {
+                notification.style.background = '#dc3545';
+            } else if (type === 'warning') {
+                notification.style.background = '#ffc107';
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Inicializar
+        updateStatus();
+    </script>
+</body>
+</html>
