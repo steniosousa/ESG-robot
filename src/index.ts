@@ -43,61 +43,53 @@ function requestPermission(action: string): Promise<boolean> {
 
 // Função para limpar e preencher campo
 async function clearAndType(selector: string, value: string) {
-    await page.click(selector);
+    await page.click(`input[name="${selector}"]`);
     await page.keyboard.down('Control');
     await page.keyboard.press('a');
     await page.keyboard.up('Control');
-    await page.type(selector, value);
+    await page.type(`input[name="${selector}"]`, value);
 }
 
 async function clearAndSelectOption(name: string, value: string) {
-    try {
-        const wrapper = `egs-gcadastro[name="${name}"]`;
+    let wrapper =
+        name === 'IDVEICULO'
+            ? `egs-gveiculo[name="${name}"]`
+            : `egs-gcadastro[name="${name}"]`;
 
-        // 1. Limpar via botão X (Angular)
-        await page.evaluate((wrapper: any) => {
-            const el = document.querySelector(wrapper);
-            const btn = el?.querySelector('span#closeBtn') as HTMLElement;
-            if (btn && btn.offsetParent !== null) {
-                btn.click();
-                return true;
-            }
-            return false;
-        }, wrapper);
+    // 1. Limpar seleção
+    await page.evaluate((wrapper:any) => {
+        const el = document.querySelector(wrapper);
+        const btn = el?.querySelector('span#closeBtn');
+        btn?.click();
+    }, wrapper);
 
+    // 2. Abrir o select
+    const inputInline = `${wrapper} input.editComboboxPdr`;
+    await page.waitForSelector(inputInline, { visible: true });
+    await page.click(inputInline);
 
-        // 2. Abrir select
-        const inputInline = `${wrapper} input.editComboboxPdr`;
-        await page.waitForSelector(inputInline, { visible: true });
-        await page.click(inputInline);
+    // 3. Input REAL de busca
+    const searchInput = '#egs-select input.form-control';
+    await page.waitForSelector(searchInput, { visible: true });
 
-        // 3. Input real de busca
-        await page.waitForSelector(wrapper, { visible: true });
+    await page.click(searchInput, { clickCount: 3 });
+    await page.keyboard.press('Backspace');
+    await page.type(searchInput, value, { delay: 80 });
 
-        await page.click(wrapper, { clickCount: 3 });
-        await page.keyboard.press('Backspace');
+    // 4. Esperar resultados carregarem (Angular)
+    await page.waitForFunction(() => {
+        return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
+    });
 
-        await page.type(wrapper, value);
-
-
-        const firstOption = '#egs-select ul.keydownRows';
-        await page.waitForSelector(firstOption, { visible: true });
-
-        await page.click(firstOption);
-
-    } catch (err) {
-        console.error('Erro ao selecionar opção:', err);
-        throw err;
-    }
+    // 5. Clicar na PRIMEIRA opção
+    await page.evaluate(() => {
+        const first = document.querySelector('#egs-select ul.keydownRows') as HTMLElement;
+        first?.scrollIntoView({ block: 'center' });
+        first?.click();
+    });
 }
 
 
-
-
-
-
-
-// Função para aguardar enquanto estiver pausado
 async function waitForResume(action?: string) {
     while (isPaused && !shouldStop) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -232,8 +224,8 @@ async function main() {
     }
 
     const taxes = {
-        vehicle: "AAW1H16",
-        driver_cpf: "022.280.219-70"
+        vehicle: "ABZ0A56",
+        driver_cpf: "02228021970"
     }
 
     console.log("Iniciando robô de web scraping para EGS...");
@@ -317,20 +309,18 @@ async function main() {
 
         const canFillCTE = await requestPermission("Preencher dados de Identificação");
         if (canFillCTE) {
-            // Usar a função para limpar, colar e selecionar destinatário
+
             await clearAndSelectOption('destinatario', identification.destination);
+            await clearAndType('valorCarga', identification.load_value);
+            await clearAndType('prodPredominante', identification.predominant_product);
+            await clearAndType('tipoCarga', identification.type);
+            await clearAndType('qtdeCarga', identification.quantity.toString());
+            await clearAndType('valorServico', identification.service_recipient.toString());
+            await clearAndType('valorReceber', identification.service_recipient.toString());
 
-            // // Limpar e preencher campos
-            // await clearAndType('input[name="valorCarga"]', identification.load_value);
-            // await clearAndType('input[name="prodPredominante"]', identification.predominant_product);
-            // await clearAndType('input[name="tipoCarga"]', identification.type);
-            // await clearAndType('input[name="qtdeCarga"]', identification.quantity.toString());
-            // await clearAndType('input[name="valorServico"]', identification.service_recipient.toString());
-            // await clearAndType('input[name="valorReceber"]', identification.service_recipient.toString());
+            await page.click('li[id="cteNormal"]');
 
-            // await page.click('li[id="cteNormal"]');
 
-            // console.log("CT-e normal selecionado!");
         }
     } catch (error) {
         console.log(error)
@@ -342,10 +332,10 @@ async function main() {
         // Solicitar permissão para preencher dados do veículo
         const canFillVehicle = await requestPermission("Preencher dados do veículo");
         if (canFillVehicle) {
-            await clearAndSelectOption('IDVEICULO', taxes.vehicle);
+            //await clearAndSelectOption('IDVEICULO', taxes.vehicle);
+            await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
         }
-        await page.waitForSelector("ul[ng-repeat='data in searchData']", { timeout: 10000 });
-        await page.click("ul[ng-repeat='data in searchData'] li:first-child");
+
     } catch (error) {
         console.log("Erro ao preencher destinatário:", error);
     }
