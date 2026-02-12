@@ -19,19 +19,29 @@ const identification = {
 
 const taxes = {
     vehicle: "ABZ0A56",
-    driver_cpf: "02228021970"
+    driver_cpf: "02228021970",
+    "Valor B.C. ICMS": "128,99",
+    "Valor do ICMS": "18,13"
+}
+
+const docs = {
+    access_key: ['24260207332190000789550010007590641216385302', '24260207332190000789550010007590641216385303', '24260207332190000789550010007590641216385304']
+}
+
+const emition = {
+    city_end: "fortaleza"
 }
 
 const tax_reform = {
     edit_ibs: true,
-    cst: "000",
-    class_trib: "000001",
-    ibs_cbs: 4245,
-    p_cbs: 0.9,
-    p_ibs: 0.1,
-    v_cbs: 18.13,
-    v_ibs_uf: 1.81,
-    v_ibs: 1.81
+    "CST IBS/CBS": "200",
+    "Class. Trib. IBS/CBS": "200021",
+    "V. BC IBS/CBS": '128,99',
+    "P. CBS": '0,9',
+    "P. IBS UF": '0,1',
+    "V. CBS": '18,13',
+    "V. IBS UF": '1,81',
+    "V. IBS": '1,81'
 }
 
 let isPaused = false;
@@ -184,13 +194,21 @@ async function clearAndType(selector: string, value: string) {
     await page.keyboard.up('Control');
     await page.type(`input[name="${selector}"]`, value);
 }
+const timer = async () => {
+    for (let i = 0; i < 30; i++) {
+        await waitForResume();
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+};
+
 
 async function clearAndSelectOption(name: string, value: string) {
+    await timer();
+
     let wrapper =
         name === 'IDVEICULO'
             ? `egs-gveiculo[name="${name}"]` : `egs-gcadastro[name="${name}"]`;
 
-    // 1. Limpar seleção
     await page.evaluate((wrapper: any) => {
         const el = document.querySelector(wrapper);
         const btn = el?.querySelector('span#closeBtn');
@@ -198,7 +216,7 @@ async function clearAndSelectOption(name: string, value: string) {
     }, wrapper);
     const selector = `${wrapper} input.editComboboxPdr`;
     await page.type(selector, value);
-
+    await timer();
     if (name === 'IDVEICULO') {
         await page.waitForSelector('egs-gveiculo #egs-select ul.keydownRows', {
             visible: true
@@ -212,11 +230,9 @@ async function clearAndSelectOption(name: string, value: string) {
             { visible: true }
         );
 
-        // pega o primeiro item corretamente
         await page.click(
             `${selectBase} #egs-select ul.keydownRows`
         );
-
 
     } else {
         await page.waitForFunction(() => {
@@ -235,18 +251,12 @@ async function clearAndSelectOption(name: string, value: string) {
 
 
 
+
+
+
 async function main() {
-    // Iniciar servidor de controle
     createControlServer();
-
-    // Abrir janela de controle
-    setTimeout(() => {
-        openControlWindow();
-    }, 2000);
-
-
-    console.log("Iniciando robô de web scraping para EGS...");
-    console.log("🌐 Janela de controle será aberta ao lado");
+    openControlWindow();
 
     await waitForResume();
 
@@ -259,17 +269,11 @@ async function main() {
     console.log("Acessando página de login...");
     await waitForResume();
 
-    try {
-        await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
-    } catch (error) {
-        console.log("Erro ao carregar página. Tentando novamente...");
-        await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
-    }
+    await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
     const currentUrl = page.url();
 
     if (currentUrl.includes("login")) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
 
@@ -277,6 +281,7 @@ async function main() {
             console.log("Verificação de robô detectada! Aguardando você resolver...");
         }
 
+        await timer()
         await waitForResume();
 
         await page.waitForSelector('input[name="login"]', { timeout: 10000 });
@@ -291,12 +296,13 @@ async function main() {
         const submitButton = await page.$('button[type="submit"]');
         if (submitButton) {
             await submitButton.click();
-            await new Promise(resolve => setTimeout(resolve, 3000));
         } else {
             readlineSync.question("NÃO FOI POSSÍVEL ENCONTRAR O BOTÃO DE SUBMIT");
         }
 
     }
+
+
 
     //page copy
     await waitForResume();
@@ -307,48 +313,98 @@ async function main() {
         await page.click("button[data-original-title='Copiar']");
     }
 
-
+    await timer()
 
 
     //page destination
     await waitForResume();
     await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
+
     await clearAndSelectOption('destinatario', identification.destination);
+    await clearAndSelectOption('destinatario', identification.destination);
+
     await clearAndType('valorCarga', identification.load_value);
+
     await clearAndType('prodPredominante', identification.predominant_product);
     await clearAndType('tipoCarga', identification.type);
+
     await clearAndType('qtdeCarga', identification.quantity.toString());
+
     await clearAndType('valorServico', identification.service_recipient.toString());
+
     await clearAndType('valorReceber', identification.service_recipient.toString());
+
 
     await page.click('li[id="cteNormal"]');
 
 
     //page taxes
     await waitForResume();
+
+
     await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
+
+
     await clearAndSelectOption('IDVEICULO', taxes.vehicle);
+
+
     await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
+
+    await clearAndType('valorbcICMS', taxes['Valor B.C. ICMS']);
+    await clearAndType('valorIcms', taxes['Valor do ICMS']);
+
     await page.click('li[id="documentos"]');
+
 
 
     await waitForResume();
     await page.waitForSelector('div[class="dx-checkbox-container"]', { timeout: 10000 });
-    // await page.click('div[class="dx-checkbox-container"]');
-    // await page.click('button[data-original-title="Excluir"]');
-    // await page.waitForSelector('ng-click="close()"', { timeout: 10000 });
-    // await page.click('ng-click="close()"');
-    // await page.waitForSelector('button[id="btnSimConfirm"]', { timeout: 10000 });
-    // await page.click('button[id="btnSimConfirm"]');
+    await page.click('div[class="dx-checkbox-container"]');
+
+    await timer()
+
+    await page.click('egs-button-delete');
+
+    await timer()
+    await page.waitForSelector('button[id="btnSimConfirm"]', { timeout: 10000 });
+
+    await page.click('button[id="btnSimConfirm"]');
+
+    await waitForResume();
+    await page.waitForSelector('egs-combobox-tabela[name="cClassTribIBSCBS"]', { timeout: 10000 });
+
+
+    for (const key of docs.access_key) {
+        await timer()
+        await page.click('egs-button-new')
+        await timer()
+        await page.waitForSelector('input[name="CHAVENFE"]', { timeout: 20000 });
+        await page.type('input[name="CHAVENFE"]', key)
+        await page.waitForSelector('egs-button-save-popup button', { timeout: 20000 });
+        await page.click('egs-button-save-popup button')
+        await timer()
+    }
 
     await page.click('li[id="ReformaTrib"]');
-    // await clearAndSelectOption('egs-combobox-tabela', tax_reform.cst);
-    await clearAndType('vIBS', tax_reform.v_ibs.toString());
-    await clearAndType('pCBS', tax_reform.p_cbs.toString());
-    await clearAndType('pIBSUF', tax_reform.p_ibs.toString());
-    await clearAndType('vIBSUF', tax_reform.v_ibs_uf.toString());
-    await clearAndType('vBC', tax_reform.ibs_cbs.toString());
 
+    await clearAndType('vIBS', tax_reform['V. IBS']);
+
+    await clearAndType('pCBS', tax_reform['P. CBS']);
+
+    await clearAndType('vCBS', tax_reform['V. CBS']);
+
+    await clearAndType('pIBSUF', tax_reform['P. IBS UF']);
+
+    await clearAndType('vIBSUF', tax_reform['V. IBS UF']);
+
+    await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
+
+
+    const canClickSave = await requestPermission("Clicar no botão salvar");
+
+    if (canClickSave) {
+        await page.click('egs-button-save-form button');
+    }
 }
 // await browser.close();
 
