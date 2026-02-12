@@ -187,30 +187,26 @@ async function clearAndSelectOption(name: string, value: string) {
     const selector = `${wrapper} input.editComboboxPdr`;
     await page.type(selector, value);
 
-    // // 2. Abrir o select
-    // const inputInline = `${wrapper} input.editComboboxPdr`;
-    // await page.waitForSelector(inputInline, { visible: true });
-    // await page.click(inputInline);
+    if (name === 'IDVEICULO' || name === 'IDMOTORISTA') {
+        await page.waitForSelector('egs-gveiculo #egs-select ul.keydownRows', {
+            visible: true
+        });
+        await page.click('egs-gveiculo #egs-select ul.keydownRows:first-of-type');
 
-    // // 3. Input REAL de busca
-    // const searchInput = '#egs-select input.form-control';
-    // await page.waitForSelector(searchInput, { visible: true });
+    } else {
 
-    // await page.click(searchInput, { clickCount: 3 });
-    // await page.keyboard.press('Backspace');
-    // await page.type(searchInput, value, { delay: 80 });
+        await page.waitForFunction(() => {
+            return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
+        });
 
-    // 4. Esperar resultados carregarem (Angular)
-    await page.waitForFunction(() => {
-        return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
-    });
+        // 5. Clicar na PRIMEIRA opção
+        await page.evaluate(() => {
+            const first = document.querySelector('#egs-select ul.keydownRows') as HTMLElement;
+            first?.scrollIntoView({ block: 'center' });
+            first?.click();
+        });
+    }
 
-    // 5. Clicar na PRIMEIRA opção
-    await page.evaluate(() => {
-        const first = document.querySelector('#egs-select ul.keydownRows') as HTMLElement;
-        first?.scrollIntoView({ block: 'center' });
-        first?.click();
-    });
 }
 
 async function main() {
@@ -312,16 +308,12 @@ async function main() {
 
     try {
         await waitForResume();
-
-        // Solicitar permissão para preencher dados do veículo
-        const canFillVehicle = await requestPermission("Preencher dados do veículo");
-        if (canFillVehicle) {
-            await clearAndSelectOption('IDVEICULO', taxes.vehicle);
-            // await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
-        }
+        await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
+        await clearAndSelectOption('IDVEICULO', taxes.vehicle);
+        await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
 
     } catch (error) {
-        console.log("Erro ao preencher destinatário:", error);
+        console.log("Erro ao preencher veículo:", error);
     }
 
     //     // Navegar para a página de emissão de CTE
