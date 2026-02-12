@@ -21,6 +21,19 @@ const taxes = {
     vehicle: "ABZ0A56",
     driver_cpf: "02228021970"
 }
+
+const tax_reform = {
+    edit_ibs: true,
+    cst: "000",
+    class_trib: "000001",
+    ibs_cbs: 4245,
+    p_cbs: 0.9,
+    p_ibs: 0.1,
+    v_cbs: 18.13,
+    v_ibs_uf: 1.81,
+    v_ibs: 1.81
+}
+
 let isPaused = false;
 let shouldStop = false;
 let browser: any = null;
@@ -175,8 +188,7 @@ async function clearAndType(selector: string, value: string) {
 async function clearAndSelectOption(name: string, value: string) {
     let wrapper =
         name === 'IDVEICULO'
-            ? `egs-gveiculo[name="${name}"]`
-            : `egs-gcadastro[name="${name}"]`;
+            ? `egs-gveiculo[name="${name}"]` : `egs-gcadastro[name="${name}"]`;
 
     // 1. Limpar seleção
     await page.evaluate((wrapper: any) => {
@@ -220,6 +232,8 @@ async function clearAndSelectOption(name: string, value: string) {
     }
 
 }
+
+
 
 async function main() {
     // Iniciar servidor de controle
@@ -317,15 +331,24 @@ async function main() {
     await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
     await page.click('li[id="documentos"]');
 
-    
+
     await waitForResume();
     await page.waitForSelector('div[class="dx-checkbox-container"]', { timeout: 10000 });
-    await page.click('div[class="dx-checkbox-container"]');
-    await page.click('button[data-original-title="Excluir"]');
-    await page.waitForSelector('ng-click="close()"', { timeout: 10000 });
-    await page.click('ng-click="close()"');
-    await page.waitForSelector('button[id="btnSimConfirm"]', { timeout: 10000 });
-    await page.click('button[id="btnSimConfirm"]');
+    // await page.click('div[class="dx-checkbox-container"]');
+    // await page.click('button[data-original-title="Excluir"]');
+    // await page.waitForSelector('ng-click="close()"', { timeout: 10000 });
+    // await page.click('ng-click="close()"');
+    // await page.waitForSelector('button[id="btnSimConfirm"]', { timeout: 10000 });
+    // await page.click('button[id="btnSimConfirm"]');
+
+    await page.click('li[id="ReformaTrib"]');
+    // await clearAndSelectOption('egs-combobox-tabela', tax_reform.cst);
+    await clearAndType('vIBS', tax_reform.v_ibs.toString());
+    await clearAndType('pCBS', tax_reform.p_cbs.toString());
+    await clearAndType('pIBSUF', tax_reform.p_ibs.toString());
+    await clearAndType('vIBSUF', tax_reform.v_ibs_uf.toString());
+    await clearAndType('vBC', tax_reform.ibs_cbs.toString());
+
 }
 // await browser.close();
 
