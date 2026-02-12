@@ -187,14 +187,26 @@ async function clearAndSelectOption(name: string, value: string) {
     const selector = `${wrapper} input.editComboboxPdr`;
     await page.type(selector, value);
 
-    if (name === 'IDVEICULO' || name === 'IDMOTORISTA') {
+    if (name === 'IDVEICULO') {
         await page.waitForSelector('egs-gveiculo #egs-select ul.keydownRows', {
             visible: true
         });
         await page.click('egs-gveiculo #egs-select ul.keydownRows:first-of-type');
+    } else if (name === 'IDMOTORISTA') {
+        const selectBase = 'egs-gcadastro[name="IDMOTORISTA"]';
+
+        await page.waitForSelector(
+            `${selectBase} #egs-select ul.keydownRows`,
+            { visible: true }
+        );
+
+        // pega o primeiro item corretamente
+        await page.click(
+            `${selectBase} #egs-select ul.keydownRows`
+        );
+
 
     } else {
-
         await page.waitForFunction(() => {
             return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
         });
@@ -253,90 +265,68 @@ async function main() {
 
         await waitForResume();
 
-        try {
-            await page.waitForSelector('input[name="login"]', { timeout: 10000 });
-            await page.type('input[name="login"]', login);
+        await page.waitForSelector('input[name="login"]', { timeout: 10000 });
+        await page.type('input[name="login"]', login);
 
-            await page.waitForSelector('input[name="senha"]', { timeout: 10000 });
-            await page.type('input[name="senha"]', password);
+        await page.waitForSelector('input[name="senha"]', { timeout: 10000 });
+        await page.type('input[name="senha"]', password);
 
-            await page.waitForSelector('input[name="chaveAcesso"]', { timeout: 10000 });
-            await page.type('input[name="chaveAcesso"]', key);
+        await page.waitForSelector('input[name="chaveAcesso"]', { timeout: 10000 });
+        await page.type('input[name="chaveAcesso"]', key);
 
-            const submitButton = await page.$('button[type="submit"]');
-            if (submitButton) {
-                await submitButton.click();
-                await new Promise(resolve => setTimeout(resolve, 3000));
-            } else {
-                readlineSync.question("NÃO FOI POSSÍVEL ENCONTRAR O BOTÃO DE SUBMIT");
-            }
-
-        } catch (error) {
-            console.log("Erro ao preencher formulário automaticamente:", error);
-            readlineSync.question("");
+        const submitButton = await page.$('button[type="submit"]');
+        if (submitButton) {
+            await submitButton.click();
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        } else {
+            readlineSync.question("NÃO FOI POSSÍVEL ENCONTRAR O BOTÃO DE SUBMIT");
         }
+
     }
 
-    try {
-        await waitForResume();
-
-        await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
-        await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-        const canClickCopy = await requestPermission("Clicar no botão copiar");
-        if (canClickCopy) {
-            await page.click("button[data-original-title='Copiar']");
-        }
-    } catch (error) {
-        console.log("Erro ao aguardar elemento box-emissor-hover ou navegar para CTE:", error);
+    //page copy
+    await waitForResume();
+    await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
+    await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
+    const canClickCopy = await requestPermission("Clicar no botão copiar");
+    if (canClickCopy) {
+        await page.click("button[data-original-title='Copiar']");
     }
 
-    try {
-        await waitForResume();
-        await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
-        await clearAndSelectOption('destinatario', identification.destination);
-        await clearAndType('valorCarga', identification.load_value);
-        await clearAndType('prodPredominante', identification.predominant_product);
-        await clearAndType('tipoCarga', identification.type);
-        await clearAndType('qtdeCarga', identification.quantity.toString());
-        await clearAndType('valorServico', identification.service_recipient.toString());
-        await clearAndType('valorReceber', identification.service_recipient.toString());
 
-        await page.click('li[id="cteNormal"]');
-    } catch (error) {
-        console.log(error)
-    }
 
-    try {
-        await waitForResume();
-        await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
-        await clearAndSelectOption('IDVEICULO', taxes.vehicle);
-        await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
 
-    } catch (error) {
-        console.log("Erro ao preencher veículo:", error);
-    }
+    //page destination
+    await waitForResume();
+    await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
+    await clearAndSelectOption('destinatario', identification.destination);
+    await clearAndType('valorCarga', identification.load_value);
+    await clearAndType('prodPredominante', identification.predominant_product);
+    await clearAndType('tipoCarga', identification.type);
+    await clearAndType('qtdeCarga', identification.quantity.toString());
+    await clearAndType('valorServico', identification.service_recipient.toString());
+    await clearAndType('valorReceber', identification.service_recipient.toString());
 
-    //     // Navegar para a página de emissão de CTE
+    await page.click('li[id="cteNormal"]');
 
-    //     console.log("Robô aguardando instruções...");
-    //     console.log("Pressione ENTER para capturar dados da página atual ou Ctrl+C para sair:");
-    //     readlineSync.question("");
 
-    //     const pageContent = await page.content();
-    //     console.log("Conteúdo da página capturado com sucesso!");
-    //     console.log("Tamanho do conteúdo:", pageContent.length, "caracteres");
+    //page taxes
+    await waitForResume();
+    await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
+    await clearAndSelectOption('IDVEICULO', taxes.vehicle);
+    await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
+    await page.click('li[id="documentos"]');
 
-    //     await page.screenshot({ path: "screenshot.png", fullPage: true });
-    //     console.log("Screenshot salvo como screenshot.png");
-    // } else {
-    //     console.log("Login não foi bem-sucedido. Verifique suas credenciais.");
-    // }
-
-    console.log("Pressione ENTER para fechar o navegador...");
-    readlineSync.question("");
-
-    await browser.close();
-    console.log("Robô finalizado.");
+    
+    await waitForResume();
+    await page.waitForSelector('div[class="dx-checkbox-container"]', { timeout: 10000 });
+    await page.click('div[class="dx-checkbox-container"]');
+    await page.click('button[data-original-title="Excluir"]');
+    await page.waitForSelector('ng-click="close()"', { timeout: 10000 });
+    await page.click('ng-click="close()"');
+    await page.waitForSelector('button[id="btnSimConfirm"]', { timeout: 10000 });
+    await page.click('button[id="btnSimConfirm"]');
 }
+// await browser.close();
 
 main().catch(console.error);
