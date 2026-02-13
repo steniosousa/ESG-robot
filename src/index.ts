@@ -38,6 +38,8 @@ const tax_reform = {
     "V. IBS": ""
 }
 
+let timerDuration = 10; // Default 10 segundos
+
 
 let isPaused = false;
 let shouldStop = false;
@@ -201,6 +203,11 @@ function createControlServer() {
         if (config.emition) Object.assign(emition, config.emition);
         if (config.tax_reform) Object.assign(tax_reform, config.tax_reform);
         
+        // Atualizar configuração do timer
+        if (config.timer_config) {
+            timerDuration = config.timer_config.duration || 10;
+        }
+        
         console.log('📝 Configuração atualizada via painel de controle');
         res.json({ success: true });
     });
@@ -252,9 +259,9 @@ async function clearAndType(selector: string, value: string) {
     await page.type(`input[name="${selector}"]`, value);
 }
 const timer = async () => {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < timerDuration; i++) {
         await waitForResume();
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo por iteração
     }
 };
 

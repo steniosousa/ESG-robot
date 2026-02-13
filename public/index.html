@@ -458,9 +458,28 @@
             </button>
         </div>
 
+        <div class="permissions" id="permissions" style="display: none;">
+            <div style="font-weight: 600; margin-bottom: 10px; color: #856404;">
+                🔔 Solicitações de Permissão
+            </div>
+            <div id="permissions-list"></div>
+        </div>
+
         <div class="config-section">
             <div style="font-weight: 600; margin-bottom: 15px; color: #333; font-size: 1.1em;">
                 ⚙️ Configuração do Robô
+            </div>
+            
+            <!-- Configurações do Temporizador -->
+            <div class="config-group">
+                <div class="config-title">⏱️ Configurações do Temporizador</div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Tempo do Timer (segundos):</label>
+                        <input type="number" id="timer_duration" value="10" min="1" max="60" class="config-input">
+                        <small style="color: #666; font-size: 0.8em;">Tempo de espera entre ações (1-60 segundos)</small>
+                    </div>
+                </div>
             </div>
             
             <!-- Identificação -->
@@ -589,12 +608,7 @@
             </div>
         </div>
 
-        <div class="permissions" id="permissions" style="display: none;">
-            <div style="font-weight: 600; margin-bottom: 10px; color: #856404;">
-                🔔 Solicitações de Permissão
-            </div>
-            <div id="permissions-list"></div>
-        </div>
+        
 
         <div class="log">
             <div class="log-title">📋 Log de Eventos</div>
@@ -733,6 +747,9 @@
                     "V. BC IBS/CBS": document.getElementById('v_bc').value,
                     "V. CBS": document.getElementById('v_cbs').value,
                     "V. IBS UF / V. IBS": document.getElementById('v_ibs').value
+                },
+                timer_config: {
+                    duration: parseInt(document.getElementById('timer_duration').value) || 10
                 }
             };
 
@@ -1116,6 +1133,11 @@
                 document.getElementById('v_bc').value = config.tax_reform["V. BC IBS/CBS"] || '';
                 document.getElementById('v_cbs').value = config.tax_reform["V. CBS"] || '';
                 document.getElementById('v_ibs').value = config.tax_reform["V. IBS"] || '';
+            }
+
+            // Carregar configurações do temporizador
+            if (config.timer_config) {
+                document.getElementById('timer_duration').value = config.timer_config.duration || 10;
             }
 
             showNotification('Configuração carregada com sucesso!', 'success');
