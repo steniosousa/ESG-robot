@@ -29,7 +29,7 @@ const docs = {
 }
 
 const emition = {
-    city_end: "fortaleza"
+    finality: "0"
 }
 
 const tax_reform = {
@@ -43,6 +43,7 @@ const tax_reform = {
     "V. IBS UF": '1,81',
     "V. IBS": '1,81'
 }
+
 
 let isPaused = false;
 let shouldStop = false;
@@ -195,7 +196,7 @@ async function clearAndType(selector: string, value: string) {
     await page.type(`input[name="${selector}"]`, value);
 }
 const timer = async () => {
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 10; i++) {
         await waitForResume();
         await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -209,14 +210,31 @@ async function clearAndSelectOption(name: string, value: string) {
         name === 'IDVEICULO'
             ? `egs-gveiculo[name="${name}"]` : `egs-gcadastro[name="${name}"]`;
 
+
+    if (name === 'finalidadeCte') {
+        wrapper = `egs-cte-finalidade[name="${name}"]`;
+    }
     await page.evaluate((wrapper: any) => {
         const el = document.querySelector(wrapper);
         const btn = el?.querySelector('span#closeBtn');
         btn?.click();
     }, wrapper);
-    const selector = `${wrapper} input.editComboboxPdr`;
-    await page.type(selector, value);
-    await timer();
+
+    if (name !== 'finalidadeCte') {
+        const selector = `${wrapper} input.editComboboxPdr`;
+        await page.type(selector, value);
+        await timer();
+    } else {
+        const selector = `${wrapper} input[type="text"]`;
+
+        await page.waitForSelector(selector, { visible: true });
+
+        await page.click(selector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+
+        await page.type(selector, value);
+        await timer();
+    }
     if (name === 'IDVEICULO') {
         await page.waitForSelector('egs-gveiculo #egs-select ul.keydownRows', {
             visible: true
@@ -234,7 +252,15 @@ async function clearAndSelectOption(name: string, value: string) {
             `${selectBase} #egs-select ul.keydownRows`
         );
 
-    } else {
+    } else if (name === 'finalidadeCte') {
+        await page.waitForSelector('egs-cte-finalidade #egs-select ul.keydownRows', {
+            visible: true
+        });
+        await page.click('egs-cte-finalidade #egs-select ul.keydownRows:first-of-type');
+    }
+
+
+    else {
         await page.waitForFunction(() => {
             return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
         });
@@ -384,6 +410,14 @@ async function main() {
         await page.click('egs-button-save-popup button')
         await timer()
     }
+
+    await timer()
+
+    await page.click('li[id="emissao"]');
+    await clearAndSelectOption('finalidadeCte', emition.finality);
+
+
+
 
     await page.click('li[id="ReformaTrib"]');
 
