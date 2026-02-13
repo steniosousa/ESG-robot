@@ -153,6 +153,22 @@
             box-shadow: 0 3px 10px rgba(220, 53, 69, 0.4);
         }
 
+        .btn-start {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: linear-gradient(135deg, #20c997, #198754);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-start:disabled {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            cursor: not-allowed;
+        }
+
         .permissions {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -304,6 +320,105 @@
                 opacity: 1;
             }
         }
+
+        .config-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+
+        .config-group {
+            margin-bottom: 20px;
+        }
+
+        .config-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1em;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .config-field {
+            flex: 1;
+        }
+
+        .config-field label {
+            display: block;
+            font-weight: 500;
+            color: #6c757d;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.9em;
+            transition: border-color 0.3s ease;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .config-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 0.9em;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .config-textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .config-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-save:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn-load {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            color: white;
+        }
+
+        .btn-load:hover:not(:disabled) {
+            background: linear-gradient(135deg, #545b62, #495057);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(108, 117, 125, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -329,7 +444,10 @@
         </div>
 
         <div class="controls">
-            <button class="btn btn-pause" id="pause-btn" onclick="pauseProcess()">
+            <button class="btn btn-start" id="start-btn" onclick="startRobot()">
+                🚀 Iniciar Robô
+            </button>
+            <button class="btn btn-pause" id="pause-btn" onclick="pauseProcess()" disabled>
                 ⏸️ Pausar
             </button>
             <button class="btn btn-resume" id="resume-btn" onclick="resumeProcess()" disabled>
@@ -338,6 +456,157 @@
             <button class="btn btn-stop" id="stop-btn" onclick="stopProcess()">
                 ⏹️ Parar
             </button>
+        </div>
+
+        <div class="config-section">
+            <div style="font-weight: 600; margin-bottom: 15px; color: #333; font-size: 1.1em;">
+                ⚙️ Configuração do Robô
+            </div>
+            
+            <!-- Identificação -->
+            <div class="config-group">
+                <div class="config-title">📋 Identificação</div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Destinatário (CPF/CNPJ):</label>
+                        <input type="text" id="destination" value="" placeholder="Ex: 373.249.934-00" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>Valor da Carga:</label>
+                        <input type="text" id="load_value" value="" placeholder="Ex: 100.00" class="config-input">
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Quantidade:</label>
+                        <input type="number" id="quantity" value="" placeholder="Ex: 18" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>Valor do Serviço:</label>
+                        <input type="text" id="service_recipient" value="" placeholder="Ex: 128.99" class="config-input">
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Tipo de Carga:</label>
+                        <input type="text" id="type" value="" placeholder="Ex: FIO" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>Produto Predominante:</label>
+                        <input type="text" id="predominant_product" value="" placeholder="Ex: FIO" class="config-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Veículo e Motorista -->
+            <div class="config-group">
+                <div class="config-title">🚚 Veículo e Motorista</div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Veículo:</label>
+                        <input type="text" id="vehicle" value="" placeholder="Ex: ABZ0A56" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>CPF Motorista:</label>
+                        <input type="text" id="driver_cpf" value="" placeholder="Ex: 02228021970" class="config-input">
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Valor BC ICMS:</label>
+                        <input type="text" id="valor_bc_icms" value="" placeholder="Ex: 128,99" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>Valor ICMS:</label>
+                        <input type="text" id="valor_icms" value="" placeholder="Ex: 18,13" class="config-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos -->
+            <div class="config-group">
+                <div class="config-title">📄 Documentos (Chaves de Acesso)</div>
+                <div class="config-field">
+                    <label>Chaves de Acesso (uma por linha):</label>
+                    <textarea id="access_keys" rows="3" class="config-textarea" placeholder="Cole as chaves de acesso aqui, uma por linha..."></textarea>
+                </div>
+            </div>
+
+            <!-- Emissão -->
+            <div class="config-group">
+                <div class="config-title">📤 Emissão</div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Finalidade do CTe:</label>
+                        <select id="finality" class="config-input">
+                            <option value="0">Normal</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reforma Tributária -->
+            <div class="config-group">
+                <div class="config-title">💰 Reforma Tributária</div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Editar IBS:</label>
+                        <select id="edit_ibs" class="config-input">
+                            <option value="true">Sim</option>
+                            <option value="false">Não</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label>CST IBS/CBS:</label>
+                        <input type="text" id="cst_ibs_cbs" value="" placeholder="Ex: 200" class="config-input">
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>Class. Trib. IBS/CBS:</label>
+                        <input type="text" id="class_trib" value="" placeholder="Ex: 200021" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>V. BC IBS/CBS:</label>
+                        <input type="text" id="v_bc" value="" placeholder="Ex: 128,99" class="config-input">
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>P. CBS (%):</label>
+                        <input type="text" id="p_cbs" value="" placeholder="Ex: 0,9" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>V. CBS:</label>
+                        <input type="text" id="v_cbs" value="" placeholder="Ex: 18,13" class="config-input">
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>P. IBS UF (%):</label>
+                        <input type="text" id="p_ibs_uf" value="" placeholder="Ex: 0,1" class="config-input">
+                    </div>
+                    <div class="config-field">
+                        <label>V. IBS UF:</label>
+                        <input type="text" id="v_ibs_uf" value="" placeholder="Ex: 1,81" class="config-input">
+                    </div>
+                </div>
+                <div class="config-row">
+                    <div class="config-field">
+                        <label>V. IBS:</label>
+                        <input type="text" id="v_ibs" value="" placeholder="Ex: 1,81" class="config-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-buttons">
+                <button class="btn btn-save" onclick="saveConfig()">
+                    💾 Salvar Configuração
+                </button>
+                <button class="btn btn-load" onclick="loadConfig()">
+                    📂 Carregar Configuração
+                </button>
+            </div>
         </div>
 
         <div class="permissions" id="permissions" style="display: none;">
@@ -412,6 +681,7 @@
             const pauseBtn = document.getElementById('pause-btn');
             const resumeBtn = document.getElementById('resume-btn');
             const stopBtn = document.getElementById('stop-btn');
+            const startBtn = document.getElementById('start-btn');
 
             // Atualizar classes de status
             statusDiv.className = 'status';
@@ -440,14 +710,36 @@
             } else {
                 statusText.textContent = 'Aguardando';
                 statusText.className = 'status-value';
-                runningText.textContent = 'Iniciando';
+                runningText.textContent = 'Aguardando configuração';
                 runningText.className = 'status-value';
             }
 
             // Atualizar estado dos botões
+            startBtn.disabled = status.isRunning || status.shouldStop;
             pauseBtn.disabled = status.isPaused || status.shouldStop || !status.isRunning;
             resumeBtn.disabled = !status.isPaused || status.shouldStop;
             stopBtn.disabled = status.shouldStop;
+        }
+
+        async function startRobot() {
+            try {
+                const response = await fetch('/api/start-robot', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('last-action').textContent = 'Robô iniciado';
+                    document.getElementById('start-btn').disabled = true;
+                    addLog('🚀 Robô iniciado com sucesso', 'success');
+                    showNotification('Robô iniciado', 'success');
+                } else {
+                    addLog(`❌ Erro ao iniciar: ${result.message}`, 'error');
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao iniciar robô:', error);
+                addLog('❌ Erro ao iniciar robô', 'error');
+                showNotification('Erro ao iniciar robô', 'error');
+            }
         }
 
         async function pauseProcess() {
@@ -615,6 +907,184 @@
 
         // Inicializar
         updateStatus();
+
+        // Funções de Configuração
+        function validateConfig() {
+            const requiredFields = [
+                { id: 'destination', name: 'Destinatário' },
+                { id: 'load_value', name: 'Valor da Carga' },
+                { id: 'quantity', name: 'Quantidade' },
+                { id: 'service_recipient', name: 'Valor do Serviço' },
+                { id: 'type', name: 'Tipo de Carga' },
+                { id: 'predominant_product', name: 'Produto Predominante' },
+                { id: 'vehicle', name: 'Veículo' },
+                { id: 'driver_cpf', name: 'CPF Motorista' },
+                { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
+                { id: 'valor_icms', name: 'Valor ICMS' }
+            ];
+
+            const missingFields = [];
+            for (const field of requiredFields) {
+                const value = document.getElementById(field.id).value.trim();
+                if (!value) {
+                    missingFields.push(field.name);
+                }
+            }
+
+            const accessKeys = document.getElementById('access_keys').value.trim();
+            if (!accessKeys) {
+                missingFields.push('Chaves de Acesso');
+            }
+
+            if (missingFields.length > 0) {
+                showNotification(`Preencha os campos obrigatórios: ${missingFields.join(', ')}`, 'error');
+                addLog(`❌ Campos obrigatórios não preenchidos: ${missingFields.join(', ')}`, 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function saveConfig() {
+            if (!validateConfig()) {
+                return;
+            }
+
+            const config = {
+                identification: {
+                    destination: document.getElementById('destination').value,
+                    load_value: document.getElementById('load_value').value,
+                    quantity: parseInt(document.getElementById('quantity').value),
+                    load_service: parseFloat(document.getElementById('service_recipient').value),
+                    type: document.getElementById('type').value,
+                    predominant_product: document.getElementById('predominant_product').value,
+                    service_recipient: parseFloat(document.getElementById('service_recipient').value)
+                },
+                taxes: {
+                    vehicle: document.getElementById('vehicle').value,
+                    driver_cpf: document.getElementById('driver_cpf').value,
+                    "Valor B.C. ICMS": document.getElementById('valor_bc_icms').value,
+                    "Valor do ICMS": document.getElementById('valor_icms').value
+                },
+                docs: {
+                    access_key: document.getElementById('access_keys').value.split('\n').filter(key => key.trim())
+                },
+                emition: {
+                    finality: document.getElementById('finality').value
+                },
+                tax_reform: {
+                    edit_ibs: document.getElementById('edit_ibs').value === 'true',
+                    "CST IBS/CBS": document.getElementById('cst_ibs_cbs').value,
+                    "Class. Trib. IBS/CBS": document.getElementById('class_trib').value,
+                    "V. BC IBS/CBS": document.getElementById('v_bc').value,
+                    "P. CBS": document.getElementById('p_cbs').value,
+                    "P. IBS UF": document.getElementById('p_ibs_uf').value,
+                    "V. CBS": document.getElementById('v_cbs').value,
+                    "V. IBS UF": document.getElementById('v_ibs_uf').value,
+                    "V. IBS": document.getElementById('v_ibs').value
+                }
+            };
+
+            // Salvar no localStorage
+            localStorage.setItem('robot-config', JSON.stringify(config));
+            
+            // Enviar para o servidor
+            fetch('/api/update-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    addLog('✅ Configuração salva com sucesso', 'success');
+                    showNotification('Configuração salva', 'success');
+                } else {
+                    addLog('❌ Erro ao salvar configuração', 'error');
+                    showNotification('Erro ao salvar configuração', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                addLog('❌ Erro ao salvar configuração', 'error');
+                showNotification('Erro ao salvar configuração', 'error');
+            });
+        }
+
+        function loadConfig() {
+            // Carregar do localStorage
+            const savedConfig = localStorage.getItem('robot-config');
+            if (savedConfig) {
+                const config = JSON.parse(savedConfig);
+                populateForm(config);
+                addLog('📂 Configuração carregada do localStorage', 'info');
+                showNotification('Configuração carregada', 'info');
+            } else {
+                // Tentar carregar do servidor
+                fetch('/api/get-config')
+                    .then(response => response.json())
+                    .then(config => {
+                        populateForm(config);
+                        addLog('📂 Configuração carregada do servidor', 'info');
+                        showNotification('Configuração carregada', 'info');
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        addLog('❌ Nenhuma configuração encontrada', 'warning');
+                        showNotification('Nenhuma configuração encontrada', 'warning');
+                    });
+            }
+        }
+
+        function populateForm(config) {
+            // Identificação
+            if (config.identification) {
+                document.getElementById('destination').value = config.identification.destination || '';
+                document.getElementById('load_value').value = config.identification.load_value || '';
+                document.getElementById('quantity').value = config.identification.quantity || '';
+                document.getElementById('service_recipient').value = config.identification.service_recipient || '';
+                document.getElementById('type').value = config.identification.type || '';
+                document.getElementById('predominant_product').value = config.identification.predominant_product || '';
+            }
+
+            // Veículo e Motorista
+            if (config.taxes) {
+                document.getElementById('vehicle').value = config.taxes.vehicle || '';
+                document.getElementById('driver_cpf').value = config.taxes.driver_cpf || '';
+                document.getElementById('valor_bc_icms').value = config.taxes["Valor B.C. ICMS"] || '';
+                document.getElementById('valor_icms').value = config.taxes["Valor do ICMS"] || '';
+            }
+
+            // Documentos
+            if (config.docs && config.docs.access_key) {
+                document.getElementById('access_keys').value = config.docs.access_key.join('\n');
+            }
+
+            // Emissão
+            if (config.emition) {
+                document.getElementById('finality').value = config.emition.finality || '0';
+            }
+
+            // Reforma Tributária
+            if (config.tax_reform) {
+                document.getElementById('edit_ibs').value = config.tax_reform.edit_ibs ? 'true' : 'false';
+                document.getElementById('cst_ibs_cbs').value = config.tax_reform["CST IBS/CBS"] || '';
+                document.getElementById('class_trib').value = config.tax_reform["Class. Trib. IBS/CBS"] || '';
+                document.getElementById('v_bc').value = config.tax_reform["V. BC IBS/CBS"] || '';
+                document.getElementById('p_cbs').value = config.tax_reform["P. CBS"] || '';
+                document.getElementById('p_ibs_uf').value = config.tax_reform["P. IBS UF"] || '';
+                document.getElementById('v_cbs').value = config.tax_reform["V. CBS"] || '';
+                document.getElementById('v_ibs_uf').value = config.tax_reform["V. IBS UF"] || '';
+                document.getElementById('v_ibs').value = config.tax_reform["V. IBS"] || '';
+            }
+        }
+
+        // Carregar configuração ao iniciar
+        window.addEventListener('load', () => {
+            loadConfig();
+        });
     </script>
 </body>
 </html>

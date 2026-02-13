@@ -8,24 +8,24 @@ const password = "inter2026"
 const key = "50201"
 
 const identification = {
-    destination: "373.249.934-00",
-    load_value: "100.00",
-    quantity: 18,
-    load_service: 40.85,
-    type: "FIO",
-    predominant_product: "FIO",
-    service_recipient: 128.99
+    destination: "",
+    load_value: "",
+    quantity: 0,
+    load_service: 0,
+    type: "",
+    predominant_product: "",
+    service_recipient: 0
 }
 
 const taxes = {
-    vehicle: "ABZ0A56",
-    driver_cpf: "02228021970",
-    "Valor B.C. ICMS": "128,99",
-    "Valor do ICMS": "18,13"
+    vehicle: "",
+    driver_cpf: "",
+    "Valor B.C. ICMS": "",
+    "Valor do ICMS": ""
 }
 
 const docs = {
-    access_key: ['24260207332190000789550010007590641216385302', '24260207332190000789550010007590641216385303', '24260207332190000789550010007590641216385304']
+    access_key: []
 }
 
 const emition = {
@@ -34,14 +34,14 @@ const emition = {
 
 const tax_reform = {
     edit_ibs: true,
-    "CST IBS/CBS": "200",
-    "Class. Trib. IBS/CBS": "200021",
-    "V. BC IBS/CBS": '128,99',
-    "P. CBS": '0,9',
-    "P. IBS UF": '0,1',
-    "V. CBS": '18,13',
-    "V. IBS UF": '1,81',
-    "V. IBS": '1,81'
+    "CST IBS/CBS": "",
+    "Class. Trib. IBS/CBS": "",
+    "V. BC IBS/CBS": "",
+    "P. CBS": "",
+    "P. IBS UF": "",
+    "V. CBS": "",
+    "V. IBS UF": "",
+    "V. IBS": ""
 }
 
 
@@ -53,6 +53,7 @@ let controlPage: any = null;
 
 let pendingPermission: { action: string; resolve: (value: boolean) => void } | null = null;
 let permissionRequests: Array<{ action: string; timestamp: number }> = [];
+let robotCanStart = false;
 
 function requestPermission(action: string): Promise<boolean> {
     console.log(`\n🔔 Aguardando permissão para: ${action}`);
@@ -146,6 +147,68 @@ function createControlServer() {
             pendingPermission = null;
         }
 
+        res.json({ success: true });
+    });
+
+    // Endpoint para iniciar o robô
+    app.post('/api/start-robot', (req, res) => {
+        // Validar se todos os campos obrigatórios estão preenchidos
+        const requiredFields = [
+            { field: identification.destination, name: 'Destinatário' },
+            { field: identification.load_value, name: 'Valor da Carga' },
+            { field: identification.quantity, name: 'Quantidade' },
+            { field: identification.service_recipient, name: 'Valor do Serviço' },
+            { field: identification.type, name: 'Tipo de Carga' },
+            { field: identification.predominant_product, name: 'Produto Predominante' },
+            { field: taxes.vehicle, name: 'Veículo' },
+            { field: taxes.driver_cpf, name: 'CPF Motorista' },
+            { field: taxes["Valor B.C. ICMS"], name: 'Valor BC ICMS' },
+            { field: taxes["Valor do ICMS"], name: 'Valor ICMS' }
+        ];
+
+        const missingFields = requiredFields.filter(item => !item.field || item.field === "");
+        
+        if (docs.access_key.length === 0) {
+            missingFields.push({ field: "", name: 'Chaves de Acesso' });
+        }
+
+        if (missingFields.length > 0) {
+            res.json({ 
+                success: false, 
+                message: `Preencha os campos obrigatórios: ${missingFields.map(item => item.name).join(', ')}` 
+            });
+            return;
+        }
+
+        // Sinalizar que pode iniciar
+        robotCanStart = true;
+        console.log('🚀 Robô autorizado a iniciar');
+        res.json({ success: true, message: 'Robô iniciando...' });
+    });
+
+    // Endpoint para obter configuração atual
+    app.get('/api/get-config', (req, res) => {
+        res.json({
+            identification,
+            taxes,
+            docs,
+            emition,
+            tax_reform
+        });
+    });
+
+    // Endpoint para atualizar configuração
+    app.post('/api/update-config', (req, res) => {
+        const config = req.body;
+        
+        // Atualizar variáveis globais
+        if (config.identification) Object.assign(identification, config.identification);
+        if (config.taxes) Object.assign(taxes, config.taxes);
+        if (config.docs) Object.assign(docs, config.docs);
+        if (config.emition) Object.assign(emition, config.emition);
+        if (config.tax_reform) Object.assign(tax_reform, config.tax_reform);
+        
+        console.log('📝 Configuração atualizada via painel de controle');
         res.json({ success: true });
     });
 
@@ -283,6 +346,21 @@ async function clearAndSelectOption(name: string, value: string) {
 async function main() {
     createControlServer();
     openControlWindow();
+
+    console.log("⏳ Aguardando configuração e autorização para iniciar...");
+    console.log("📱 Preencha os dados no painel de controle e clique em 'Iniciar Robô'");
+
+    // Aguardar até que o robô seja autorizado a iniciar
+    while (!robotCanStart && !shouldStop) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (shouldStop) {
+            console.log("🛑 Processo interrompido antes de iniciar");
+            return;
+        }
+    }
+
+    console.log("🚀 Iniciando robô de web scraping para ESG...");
+    console.log("🌐 Janela de controle será aberta ao lado");
 
     await waitForResume();
 
