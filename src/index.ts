@@ -7,6 +7,18 @@ const login = "FINANCEIRO"
 const password = "inter2026"
 const key = "50201"
 
+
+const destination_register = {
+    "cpf/cnpj":"41071085000186",
+    "Razão Social":"berkj",
+    "cep":"45345345",
+    "rua":"bairro",
+    "bairro":"k324234",
+    "cidade-estado":"skd",
+    "Inscrição estadual":"234234",
+    "numero":'aksdj'
+}
+
 const identification = {
     destination: "",
     load_value: "",
@@ -161,15 +173,15 @@ function createControlServer() {
         ];
 
         const missingFields = requiredFields.filter(item => !item.field || item.field === "");
-        
+
         if (docs.access_key.length === 0) {
             missingFields.push({ field: "", name: 'Chaves de Acesso' });
         }
 
         if (missingFields.length > 0) {
-            res.json({ 
-                success: false, 
-                message: `Preencha os campos obrigatórios: ${missingFields.map(item => item.name).join(', ')}` 
+            res.json({
+                success: false,
+                message: `Preencha os campos obrigatórios: ${missingFields.map(item => item.name).join(', ')}`
             });
             return;
         }
@@ -194,19 +206,19 @@ function createControlServer() {
     // Endpoint para atualizar configuração
     app.post('/api/update-config', (req, res) => {
         const config = req.body;
-        
+
         // Atualizar variáveis globais
         if (config.identification) Object.assign(identification, config.identification);
         if (config.taxes) Object.assign(taxes, config.taxes);
         if (config.docs) Object.assign(docs, config.docs);
         if (config.emition) Object.assign(emition, config.emition);
         if (config.tax_reform) Object.assign(tax_reform, config.tax_reform);
-        
+
         // Atualizar configuração do timer
         if (config.timer_config) {
             timerDuration = config.timer_config.duration || 10;
         }
-        
+
         console.log('📝 Configuração atualizada via painel de controle');
         res.json({ success: true });
     });
@@ -408,6 +420,7 @@ async function main() {
 
 
     //page copy
+    await timer()
     await waitForResume();
     await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
     await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -417,6 +430,8 @@ async function main() {
     }
 
     await timer()
+
+
 
 
     //page destination
@@ -437,13 +452,11 @@ async function main() {
 
     await clearAndType('valorReceber', identification.service_recipient.toString());
 
-
     await page.click('li[id="cteNormal"]');
 
 
     //page taxes
     await waitForResume();
-
 
     await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
 
@@ -460,6 +473,7 @@ async function main() {
 
 
 
+    //notas
     await waitForResume();
     await page.waitForSelector('div[class="dx-checkbox-container"]', { timeout: 10000 });
     await page.click('div[class="dx-checkbox-container"]');
@@ -490,17 +504,61 @@ async function main() {
 
     await timer()
 
+
+    //emissao
     await page.click('li[id="emissao"]');
     await clearAndSelectOption('finalidadeCte', emition.finality);
 
+
+
+    //obs
+    await page.waitForSelector('a[link-id="cteNormal"]');
+    const obsTab = await page.evaluate(() => {
+        const elements = document.querySelectorAll('a[link-id="cteNormal"]');
+        const elementsArray = Array.from(elements);
+        for (const element of elementsArray) {
+            if (element.textContent.trim() === 'Obs. Cont.') {
+                (element as HTMLElement).click();
+                return true;
+            }
+        }
+        return false;
+    });
+
+    await timer()
+    await page.click('egs-button-new[ng-click="novo(Observacoes)"] button');
+    await timer()
+    await clearAndType('observacoes', "new item");
+    await page.click('egs-button-save-popup button')
+    await timer()
+    await page.evaluate(() => {
+        const rowCheckboxes = document.querySelectorAll('.dx-data-row .dx-checkbox-icon');
+
+        if (rowCheckboxes.length > 0) {
+            rowCheckboxes.forEach(cb => (cb as HTMLElement).click());
+        } else {
+            console.warn("Nenhuma linha encontrada para selecionar.");
+        }
+    });
+
+    await timer()
+    const botaoExcluir = 'egs-button-delete[ng-click="excluir(Observacoes)"]';
+    await page.click(botaoExcluir);
+    await timer()
+    const seletorSim = '#btnSimConfirm';
+    await page.waitForSelector(seletorSim, { visible: true });
+    await page.click(seletorSim);
+
+
+    //reforma tributaria
     await page.click('li[id="ReformaTrib"]');
 
     await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
 
     await clearAndType('vCBS', tax_reform['V. CBS']);
-    
+
     await clearAndType('vIBS', tax_reform['V. IBS UF / V. IBS']);
-    
+
     await clearAndType('vIBSUF', tax_reform['V. IBS UF / V. IBS']);
 
 
@@ -510,11 +568,6 @@ async function main() {
     //     await page.click('egs-button-save-form button');
     // }
 
-
-    const canBackToHome = await requestPermission("Voltar para a página inicial");
-    if (canBackToHome) {
-        await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-    }
 }
 // await browser.close();
 
