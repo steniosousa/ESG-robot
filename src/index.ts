@@ -35,11 +35,10 @@ const tax_reform = {
     edit_ibs: true,
     "V. BC IBS/CBS": "",
     "V. CBS": "",
-    "V. IBS": ""
+    "V. IBS UF / V. IBS": ""
 }
 
 let timerDuration = 10; // Default 10 segundos
-
 
 let isPaused = false;
 let shouldStop = false;
@@ -494,25 +493,27 @@ async function main() {
     await page.click('li[id="emissao"]');
     await clearAndSelectOption('finalidadeCte', emition.finality);
 
-
-
-
     await page.click('li[id="ReformaTrib"]');
 
     await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
 
     await clearAndType('vCBS', tax_reform['V. CBS']);
     
-    await clearAndType('vIBS', tax_reform['V. IBS']);
+    await clearAndType('vIBS', tax_reform['V. IBS UF / V. IBS']);
     
-    await clearAndType('vIBSUF', tax_reform['V. IBS']);
+    await clearAndType('vIBSUF', tax_reform['V. IBS UF / V. IBS']);
 
 
+    // const canClickSave = await requestPermission("Clicar no botão salvar");
 
-    const canClickSave = await requestPermission("Clicar no botão salvar");
+    // if (canClickSave) {
+    //     await page.click('egs-button-save-form button');
+    // }
 
-    if (canClickSave) {
-        await page.click('egs-button-save-form button');
+
+    const canBackToHome = await requestPermission("Voltar para a página inicial");
+    if (canBackToHome) {
+        await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
     }
 }
 // await browser.close();

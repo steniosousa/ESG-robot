@@ -476,7 +476,7 @@
                 <div class="config-row">
                     <div class="config-field">
                         <label>Tempo do Timer (segundos):</label>
-                        <input type="number" id="timer_duration" value="10" min="1" max="60" class="config-input">
+                        <input type="number" id="timer_duration" value="10" min="4" max="60" class="config-input">
                         <small style="color: #666; font-size: 0.8em;">Tempo de espera entre ações (1-60 segundos)</small>
                     </div>
                 </div>
@@ -1132,7 +1132,7 @@
                 document.getElementById('edit_ibs').value = config.tax_reform.edit_ibs ? 'true' : 'false';
                 document.getElementById('v_bc').value = config.tax_reform["V. BC IBS/CBS"] || '';
                 document.getElementById('v_cbs').value = config.tax_reform["V. CBS"] || '';
-                document.getElementById('v_ibs').value = config.tax_reform["V. IBS"] || '';
+                document.getElementById('v_ibs').value = config.tax_reform["V. IBS UF / V. IBS"] || '';
             }
 
             // Carregar configurações do temporizador
