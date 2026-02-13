@@ -13,7 +13,6 @@ const identification = {
     quantity: 0,
     load_service: 0,
     type: "",
-    predominant_product: "",
     service_recipient: 0
 }
 
@@ -34,13 +33,8 @@ const emition = {
 
 const tax_reform = {
     edit_ibs: true,
-    "CST IBS/CBS": "",
-    "Class. Trib. IBS/CBS": "",
     "V. BC IBS/CBS": "",
-    "P. CBS": "",
-    "P. IBS UF": "",
     "V. CBS": "",
-    "V. IBS UF": "",
     "V. IBS": ""
 }
 
@@ -159,7 +153,6 @@ function createControlServer() {
             { field: identification.quantity, name: 'Quantidade' },
             { field: identification.service_recipient, name: 'Valor do Serviço' },
             { field: identification.type, name: 'Tipo de Carga' },
-            { field: identification.predominant_product, name: 'Produto Predominante' },
             { field: taxes.vehicle, name: 'Veículo' },
             { field: taxes.driver_cpf, name: 'CPF Motorista' },
             { field: taxes["Valor B.C. ICMS"], name: 'Valor BC ICMS' },
@@ -259,7 +252,7 @@ async function clearAndType(selector: string, value: string) {
     await page.type(`input[name="${selector}"]`, value);
 }
 const timer = async () => {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
         await waitForResume();
         await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -429,7 +422,7 @@ async function main() {
 
     await clearAndType('valorCarga', identification.load_value);
 
-    await clearAndType('prodPredominante', identification.predominant_product);
+    await clearAndType('prodPredominante', identification.type);
     await clearAndType('tipoCarga', identification.type);
 
     await clearAndType('qtdeCarga', identification.quantity.toString());
@@ -499,17 +492,14 @@ async function main() {
 
     await page.click('li[id="ReformaTrib"]');
 
-    await clearAndType('vIBS', tax_reform['V. IBS']);
-
-    await clearAndType('pCBS', tax_reform['P. CBS']);
+    await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
 
     await clearAndType('vCBS', tax_reform['V. CBS']);
+    
+    await clearAndType('vIBS', tax_reform['V. IBS']);
+    
+    await clearAndType('vIBSUF', tax_reform['V. IBS']);
 
-    await clearAndType('pIBSUF', tax_reform['P. IBS UF']);
-
-    await clearAndType('vIBSUF', tax_reform['V. IBS UF']);
-
-    await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
 
 
     const canClickSave = await requestPermission("Clicar no botão salvar");
