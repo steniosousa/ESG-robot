@@ -2,50 +2,45 @@ import puppeteer from "puppeteer";
 import express from "express";
 import path from "path";
 
-const login = "FINANCEIRO"
-const password = "inter2026"
-const key = "50201"
-
-const destination_register = {
-    "cpf/cnpj": "61332882056",
-    "Razão Social": "berkj",
-    "cep": "60831545",
-    "Inscr.estadual": "234234",
-    "numero": 'aksdj'
+let general_config = {
+    driver: {
+        cpf: '',
+        name: '',
+    },
+    destination: {
+        cpf_cnpj: '',
+        razao_social: '',
+        cep: '',
+        insc_estadual: '',
+        numero: ''
+    },
+    note_fiscal: {
+        destination: "",
+        load_value: "",
+        quantity: 0,
+        load_service: 0,
+        type: "",
+        service_recipient: 0
+    },
+    taxes: {
+        vehicle: "",
+        Valor_BC_ICMS: "",
+        Valor_ICMS: ""
+    },
+    docs: {
+        access_key: []
+    },
+    emition: {
+        finality: "0"
+    },
+    tax_reform: {
+        edit_ibs: true,
+        Valor_BC_IBS_CBS: "",
+        Valor_CBS: "",
+        Valor_IBS_UF_IBS: ""
+    },
+    timerDuration: 10
 }
-
-let identification = {
-    destination: "",
-    load_value: "",
-    quantity: 0,
-    load_service: 0,
-    type: "",
-    service_recipient: 0
-}
-
-let taxes = {
-    vehicle: "",
-    driver_cpf: "",
-    "Valor B.C. ICMS": "",
-    "Valor do ICMS": ""
-}
-
-let docs = {
-    access_key: []
-}
-
-let emition = {
-    finality: "0"
-}
-
-let tax_reform = {
-    edit_ibs: true,
-    "V. BC IBS/CBS": "",
-    "V. CBS": "",
-    "V. IBS UF / V. IBS": ""
-}
-
-let timerDuration = 10;
 
 let isPaused = false;
 let shouldStop = false;
@@ -77,35 +72,80 @@ function requestPermission(action: string): Promise<boolean> {
 
 const creations = {
     "create_driver": async () => {
-        await page.goto("https://app.egssistemas.com.br/cadastro-geral", { waitUntil: "domcontentloaded", timeout: 30000 });
+        const { cpf, name } = general_config.driver;
 
-        await page.waitForSelector(`td:nth-of-type(3) input[aria-label="Filtro de célula"]`, { timeout: 10000 });
+        await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
+            waitUntil: "networkidle2",
+            timeout: 30000
+        });
 
-        await page.locator(`td:nth-of-type(3) input[aria-label="Filtro de célula"]`).fill("");
-        await page.locator(`td:nth-of-type(3) input[aria-label="Filtro de célula"]`).fill(destination_register["cpf/cnpj"]); await timer()
+        const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula"]';
+        await page.waitForSelector(filterSelector, { visible: true });
 
-        await page.waitForSelector('.dx-datagrid-table');
-        const rows = await page.$$('.dx-datagrid-table tbody tr.dx-data-row');
+        await page.click(filterSelector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+        await page.type(filterSelector, cpf);
 
-        if (rows.length === 0) {
-            await page.click("egs-button-new button")
-            await page.waitForSelector("input[name='cpfCnpj']", { timeout: 10000 });
-            await page.locator("input[name='cpfCnpj']").fill(destination_register["cpf/cnpj"]);
-            if (destination_register["cpf/cnpj"].length === 14) {
-                await page.waitForSelector("span[id='butonConsultaCpfCnpj']", { state: 'visible' });
-                await page.click("span[id='butonConsultaCpfCnpj']");
-                const ieSelector = "input[name='inscEstadual']";
-                await page.waitForSelector(ieSelector);
-                await page.locator(ieSelector).fill("");
-                await page.locator(ieSelector).fill(destination_register["Inscr.estadual"]);
-            } else {
-                await page.locator("input[name='RAZAOSOCIAL']").fill(destination_register["Razão Social"]);
-            }
+        await page.waitForNetworkIdle({ idleTime: 500 });
+
+        const isEmpty = await page.evaluate(() => {
+            const grid = document.querySelector('.dx-datagrid-nodata');
+            const rows = document.querySelectorAll('.dx-datagrid-table tbody tr.dx-data-row');
+            return !!grid || rows.length === 0;
+        });
+
+        if (isEmpty) {
+            await page.click("egs-button-new button");
+            clearAndType("cpfCnpj", cpf);
+            clearAndType("RAZAOSOCIAL", name);
         }
-
     },
-    "create_recipient": async () => {
-        creations.create_driver()
+    "create_destination": async () => {
+        const { cpf_cnpj, insc_estadual, razao_social, cep, numero } = general_config.destination;
+
+        await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
+            waitUntil: "networkidle2",
+            timeout: 30000
+        });
+
+        const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
+        await page.waitForSelector(filterSelector, { visible: true });
+
+        await page.click(filterSelector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+        await page.type(filterSelector, cpf_cnpj);
+
+        await page.waitForNetworkIdle({ idleTime: 500 });
+
+        const isEmpty = await page.evaluate(() => {
+            const grid = document.querySelector('.dx-datagrid-nodata');
+            const rows = document.querySelectorAll('.dx-datagrid-table tbody tr.dx-data-row');
+            return !!grid || rows.length === 0;
+        });
+
+        if (isEmpty) {
+            await page.click("egs-button-new button");
+            clearAndType("cpfCnpj", cpf_cnpj);
+
+            if (cpf_cnpj.length === 14) {
+                await page.click("#butonConsultaCpfCnpj");
+            } else {
+                await timer()
+                const selector = 'input[ui-br-cep-mask]';
+
+                await page.locator(selector).fill(cep);
+                await timer()
+                await page.click("#buttonCep");
+
+                const numeroSelector = 'input[placeholder="Ex.: 000"]';
+
+                await page.waitForSelector(numeroSelector, { state: 'visible' });
+                await page.locator(numeroSelector).fill(numero);
+                clearAndType("RAZAOSOCIAL", razao_social);
+            }
+            clearAndType("inscEstadual", insc_estadual);
+
+        }
     },
     "create_cte": async () => {
         await page.goto("https://app.egssistemas.com.br/cte-emissao", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -118,19 +158,19 @@ const creations = {
 
         await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
 
-        await clearAndSelectOption('destinatario', identification.destination);
-        await clearAndSelectOption('destinatario', identification.destination);
+        await clearAndSelectOption('destinatario', general_config.note_fiscal.destination);
+        await clearAndSelectOption('destinatario', general_config.note_fiscal.destination);
 
-        await clearAndType('valorCarga', identification.load_value);
+        await clearAndType('valorCarga', general_config.note_fiscal.load_value);
 
-        await clearAndType('prodPredominante', identification.type);
-        await clearAndType('tipoCarga', identification.type);
+        await clearAndType('prodPredominante', general_config.note_fiscal.type);
+        await clearAndType('tipoCarga', general_config.note_fiscal.type);
 
-        await clearAndType('qtdeCarga', identification.quantity.toString());
+        await clearAndType('qtdeCarga', general_config.note_fiscal.quantity.toString());
 
-        await clearAndType('valorServico', identification.service_recipient.toString());
+        await clearAndType('valorServico', general_config.note_fiscal.service_recipient.toString());
 
-        await clearAndType('valorReceber', identification.service_recipient.toString());
+        await clearAndType('valorReceber', general_config.note_fiscal.service_recipient.toString());
 
         await page.click('li[id="cteNormal"]');
 
@@ -138,12 +178,12 @@ const creations = {
 
         await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
 
-        await clearAndSelectOption('IDVEICULO', taxes.vehicle);
+        await clearAndSelectOption('IDVEICULO', general_config.taxes.vehicle);
 
-        await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
+        await clearAndSelectOption("IDMOTORISTA", general_config.driver.cpf);
 
-        await clearAndType('valorbcICMS', taxes['Valor B.C. ICMS']);
-        await clearAndType('valorIcms', taxes['Valor do ICMS']);
+        await clearAndType('valorbcICMS', general_config.taxes.Valor_BC_ICMS);
+        await clearAndType('valorIcms', general_config.taxes.Valor_ICMS);
 
         await page.click('li[id="documentos"]');
 
@@ -163,7 +203,7 @@ const creations = {
 
         await page.waitForSelector('egs-combobox-tabela[name="cClassTribIBSCBS"]', { timeout: 10000 });
 
-        for (const key of docs.access_key) {
+        for (const key of general_config.docs.access_key) {
             await timer()
             await page.click('egs-button-new')
             await timer()
@@ -178,7 +218,7 @@ const creations = {
 
         //emissao
         await page.click('li[id="emissao"]');
-        await clearAndSelectOption('finalidadeCte', emition.finality);
+        await clearAndSelectOption('finalidadeCte', general_config.emition.finality);
 
         //obs
         await page.waitForSelector('a[link-id="cteNormal"]');
@@ -221,13 +261,13 @@ const creations = {
         //reforma tributaria
         await page.click('li[id="ReformaTrib"]');
 
-        await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
+        await clearAndType('vBC', general_config.tax_reform.Valor_BC_IBS_CBS);
 
-        await clearAndType('vCBS', tax_reform['V. CBS']);
+        await clearAndType('vCBS', general_config.tax_reform.Valor_CBS);
 
-        await clearAndType('vIBS', tax_reform['V. IBS UF / V. IBS']);
+        await clearAndType('vIBS', general_config.tax_reform.Valor_IBS_UF_IBS);
 
-        await clearAndType('vIBSUF', tax_reform['V. IBS UF / V. IBS']);
+        await clearAndType('vIBSUF', general_config.tax_reform.Valor_IBS_UF_IBS);
     },
     "login": async () => {
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -241,13 +281,12 @@ const creations = {
         await timer()
 
         await page.waitForSelector('input[name="login"]', { timeout: 10000 });
-        await page.type('input[name="login"]', login);
 
-        await page.waitForSelector('input[name="senha"]', { timeout: 10000 });
-        await page.type('input[name="senha"]', password);
+        await clearAndType('login', "FINANCEIRO");
 
-        await page.waitForSelector('input[name="chaveAcesso"]', { timeout: 10000 });
-        await page.type('input[name="chaveAcesso"]', key);
+        await clearAndType('senha', "inter2026");
+
+        await clearAndType('chaveAcesso', "50201");
 
         const submitButton = await page.$('button[type="submit"]');
         if (submitButton) {
@@ -258,7 +297,7 @@ const creations = {
     "complete_route": async () => {
         await creations.login()
         await creations.create_driver()
-        await creations.create_recipient()
+        await creations.create_destination()
         await creations.create_cte()
     }
 }
@@ -324,7 +363,7 @@ function createControlServer() {
     // Endpoint para registrar destinatário
     app.post('/api/registrar-destinatario', async (req, res) => {
         try {
-            await creations.create_recipient();
+            await creations.create_destination();
             console.log('✅ Registro de destinatário executado com sucesso');
             res.json({ success: true, message: 'Registro de destinatário executado com sucesso' });
 
@@ -336,20 +375,53 @@ function createControlServer() {
     });
 
     // Endpoint para iniciar o robô
-    app.post('/api/start-robot', (req, res) => {
+    app.post('/api/start-robot', async (req, res) => {
         const config = req.body;
-        timerDuration = config.timer_config.duration;
-        identification = config.identification;
-        taxes = config.taxes;
-        docs = config.docs;
-        emition = config.emition;
-        tax_reform = config.tax_reform;
-        docs.access_key = config.docs.access_key;
+        general_config = {
+            driver: config.driver,
+            destination: config.destination,
+            note_fiscal: config.note_fiscal,
+            taxes: config.taxes,
+            docs: {
+                access_key: config.docs.access_key
+            },
+            timerDuration: config.timerDuration,
+            emition: config.emition,
+            tax_reform: config.tax_reform,
+
+        };
 
 
         robotCanStart = true;
-        console.log('🚀 Robô autorizado a iniciar');
         res.json({ success: true, message: 'Robô iniciando...' });
+    });
+
+
+    // Endpoint para iniciar o robô
+    app.post('/api/start-agente', async (req, res) => {
+        const config = req.body;
+
+        general_config = {
+            driver: config.driver,
+            destination: config.destination,
+            note_fiscal: config.note_fiscal,
+            taxes: config.taxes,
+            docs: {
+                access_key: config.docs.access_key
+            },
+            timerDuration: config.timerDuration,
+            emition: config.emition,
+            tax_reform: config.tax_reform,
+
+        };
+
+        robotCanStart = true;
+
+        await creations.login();
+        await creations.create_driver();
+        await creations.create_cte();
+
+        res.json({ success: true, message: 'Agente iniciando...' });
     });
 
     app.get('/', (req, res) => {
@@ -371,7 +443,7 @@ async function openControlWindow() {
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
-            "--window-size=400,600",
+            "--window-size=maximized",
             "--disable-features=DefaultBrowserSecurityFeatures"
         ]
     });
@@ -383,85 +455,70 @@ async function openControlWindow() {
     return controlBrowser;
 }
 
-async function clearAndType(selector: string, value: string) {
-    await page.click(`input[name="${selector}"]`);
-    await page.keyboard.down('Control');
-    await page.keyboard.press('a');
-    await page.keyboard.up('Control');
-    await page.type(`input[name="${selector}"]`, value);
+async function clearAndType(name: string, value: string) {
+    const selector = `input[name="${name}"]`;
+    await page.waitForSelector(selector, { visible: true });
+
+    await page.focus(selector);
+    await page.click(selector, { clickCount: 3 });
+    await page.keyboard.press('Backspace');
+
+    await page.waitForSelector(selector, { timeout: 10000 });
+    await page.locator(selector).fill(value);
+
 }
 
 const timer = async () => {
-    for (let i = 0; i < timerDuration; i++) {
+    for (let i = 0; i < general_config.timerDuration; i++) {
         await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo por iteração
     }
 };
 
 async function clearAndSelectOption(name: string, value: string) {
-    await timer();
+    // 1. Define o seletor do componente pai (wrapper)
+    const wrappers: Record<string, string> = {
+        'IDVEICULO': `egs-gveiculo[name="${name}"]`,
+        'finalidadeCte': `egs-cte-finalidade[name="${name}"]`,
+        'DEFAULT': `egs-gcadastro[name="${name}"]`
+    };
 
-    let wrapper =
-        name === 'IDVEICULO'
-            ? `egs-gveiculo[name="${name}"]` : `egs-gcadastro[name="${name}"]`;
+    const wrapperSelector = wrappers[name] || wrappers['DEFAULT'];
 
-    if (name === 'finalidadeCte') {
-        wrapper = `egs-cte-finalidade[name="${name}"]`;
-    }
+    // 2. Limpa a seleção atual (clica no botão de fechar/limpar se existir)
+    await page.evaluate((selector: string) => {
+        const btn = document.querySelector(selector)?.querySelector('span#closeBtn');
+        (btn as HTMLElement)?.click();
+    }, wrapperSelector);
 
-    await page.evaluate((wrapper: any) => {
-        const el = document.querySelector(wrapper);
-        const btn = el?.querySelector('span#closeBtn');
-        btn?.click();
-    }, wrapper);
+    // 3. Identifica o input (seja ele qual for dentro do wrapper)
+    const inputSelector = `${wrapperSelector} input:not([type="hidden"])`;
+    await page.waitForSelector(inputSelector, { visible: true });
 
-    if (name !== 'finalidadeCte') {
-        const selector = `${wrapper} input.editComboboxPdr`;
-        await page.type(selector, value);
-        await timer();
-    } else {
-        const selector = `${wrapper} input[type="text"]`;
+    // Limpa e Digita (Usando o método de 3 cliques para garantir foco)
+    await page.click(inputSelector, { clickCount: 3 });
+    await page.keyboard.press('Backspace');
+    await page.type(inputSelector, value, { delay: 50 });
 
-        await page.waitForSelector(selector, { visible: true });
+    // 4. Aguarda a lista de resultados aparecer
+    // O seletor 'ul.keydownRows' parece ser o padrão do sistema EGS
+    const listOptionSelector = `${wrapperSelector} #egs-select ul.keydownRows, #egs-select ul.keydownRows`;
 
-        await page.click(selector, { clickCount: 3 });
-        await page.keyboard.press('Backspace');
+    try {
+        await page.waitForSelector(listOptionSelector, { visible: true, timeout: 5000 });
 
-        await page.type(selector, value);
-        await timer();
-    }
+        // 5. Clica na primeira opção que aparecer
+        await page.evaluate((selector: string) => {
+            const firstOption = document.querySelector(selector) as HTMLElement;
+            if (firstOption) {
+                firstOption.scrollIntoView({ block: 'center' });
+                firstOption.click();
+            }
+        }, listOptionSelector);
 
-    if (name === 'IDVEICULO') {
-        await page.waitForSelector('egs-gveiculo #egs-select ul.keydownRows', {
-            visible: true
-        });
-        await page.click('egs-gveiculo #egs-select ul.keydownRows:first-of-type');
-    } else if (name === 'IDMOTORISTA') {
-        const selectBase = 'egs-gcadastro[name="IDMOTORISTA"]';
-
-        await page.waitForSelector(
-            `${selectBase} #egs-select ul.keydownRows`,
-            { visible: true }
-        );
-
-        await page.click(
-            `${selectBase} #egs-select ul.keydownRows`
-        );
-    } else if (name === 'finalidadeCte') {
-        await page.waitForSelector('egs-cte-finalidade #egs-select ul.keydownRows', {
-            visible: true
-        });
-        await page.click('egs-cte-finalidade #egs-select ul.keydownRows:first-of-type');
-    } else {
-        await page.waitForFunction(() => {
-            return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
-        });
-
-        // Clicar na PRIMEIRA opção
-        await page.evaluate(() => {
-            const first = document.querySelector('#egs-select ul.keydownRows') as HTMLElement;
-            first?.scrollIntoView({ block: 'center' });
-            first?.click();
-        });
+        // Aguarda um momento para o Angular processar a seleção
+        await page.waitForNetworkIdle({ idleTime: 100 });
+    } catch (e) {
+        console.error(`Erro ao selecionar opção para ${name}: Lista não apareceu.`);
     }
 }
 
@@ -478,7 +535,6 @@ async function main() {
 
     browser = await puppeteer.launch({
         headless: false,
-        userDataDir: './browser-data',
         defaultViewport: null,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });

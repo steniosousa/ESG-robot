@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,92 +16,158 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 10px;
+            padding: 15px;
         }
 
         .container {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-            max-width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+            max-width: 1400px;
             width: 100%;
+            margin: 0 auto;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f0f0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px 15px 0 0;
         }
 
         h1 {
-            color: #333;
-            font-size: 1.8em;
-            margin-bottom: 5px;
+            color: #2d3748;
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .subtitle {
-            color: #666;
-            font-size: 0.9em;
+            color: #718096;
+            font-size: 1em;
+            font-weight: 500;
         }
 
-        .status {
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
             background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2d3748;
             margin-bottom: 20px;
-            border-left: 4px solid #28a745;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .status.paused {
-            border-left-color: #ffc107;
+        .section-icon {
+            font-size: 1.2em;
         }
 
-        .status.stopped {
-            border-left-color: #dc3545;
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
         }
 
         .status-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.9em;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
         }
 
-        .status-item:last-child {
-            margin-bottom: 0;
+        .status-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .status-label {
+            font-size: 0.85em;
+            color: #718096;
+            margin-bottom: 5px;
             font-weight: 600;
-            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .status-value {
-            color: #666;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #2d3748;
         }
 
         .status-value.running {
-            color: #28a745;
-            font-weight: 600;
+            color: #38a169;
         }
 
         .status-value.paused {
-            color: #ffc107;
-            font-weight: 600;
+            color: #d69e2e;
         }
 
         .status-value.stopped {
-            color: #dc3545;
-            font-weight: 600;
+            color: #e53e3e;
+        }
+
+        .status-value.processing {
+            color: #3182ce;
+            animation: pulse 2s infinite;
         }
 
         .controls {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
         }
 
         .btn {
@@ -275,9 +342,17 @@
         }
 
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .spinner {
@@ -292,8 +367,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .notification {
@@ -315,6 +395,7 @@
                 transform: translateX(100%);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -565,39 +646,213 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(232, 62, 140, 0.4);
         }
+
+        /* Estilos para formulários */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .config-subsection {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .config-subsection h3 {
+            color: #2d3748;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .config-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+
+        .cadastro-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #a0aec0;
+        }
+
+        .log-entry {
+            margin-bottom: 3px;
+            padding: 2px 0;
+        }
+
+        .log-entry.success {
+            color: #68d391;
+        }
+
+        .log-entry.warning {
+            color: #fbb6ce;
+        }
+
+        .log-entry.error {
+            color: #fc8181;
+        }
+
+        .log-entry.info {
+            color: #63b3ed;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>🤖 Robô ESG</h1>
-            <p class="subtitle">Painel de Controle</p>
+            <p class="subtitle">Painel de Controle Profissional</p>
         </div>
-        
-        <div class="status" id="status">
-            <div class="status-item">
-                <span class="status-label">Status:</span>
-                <span class="status-value" id="status-text">Iniciando...</span>
+
+        <div class="main-grid">
+            <div class="section">
+                <div class="section-title">
+                    <span class="section-icon">🧑‍🦲</span>
+                    Criação de CTe automática
+                </div>
+                <div class="controls">
+                    <button class="btn btn-start" id="start-btn" onclick="startAgent()">
+                        🧑‍🦲 Iniciar agente
+                    </button>
+                </div>
             </div>
-            <div class="status-item">
-                <span class="status-label">Execução:</span>
-                <span class="status-value" id="running-text">Aguardando</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Última ação:</span>
-                <span class="status-value" id="last-action">Nenhuma</span>
+            <!-- Seção de Controles -->
+            <div class="section">
+                <div class="section-title">
+                    <span class="section-icon">🎮</span>
+                    Controles do Robô
+                </div>
+                <div class="controls">
+                    <button class="btn btn-start" id="start-btn" onclick="startRobot()">
+                        🚀 Iniciar Robô
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="controls">
-            <button class="btn btn-start" id="start-btn" onclick="startRobot()">
-                🚀 Iniciar Robô
-            </button>
-        </div>
-
-        <!-- Seção de Cadastros -->
-        <div class="cadastro-section">
-            <div class="cadastro-title">📋 Cadastros Rápidos</div>
+        <!-- Seção de Cadastros Rápidos -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">📋</span>
+                Cadastros Rápidos
+            </div>
             <div class="cadastro-buttons">
                 <button class="btn-fazer-login" onclick="fazerLogin()">
                     🔐 Fazer Login
@@ -617,158 +872,178 @@
             </div>
         </div>
 
-        <div class="permissions" id="permissions" style="display: none;">
-            <div style="font-weight: 600; margin-bottom: 10px; color: #856404;">
-                🔔 Solicitações de Permissão
+        <!-- Seção de Configurações -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">⚙️</span>
+                Configurações do Sistema
             </div>
-            <div id="permissions-list"></div>
-        </div>
 
-        <div class="config-section">
-            <div style="font-weight: 600; margin-bottom: 15px; color: #333; font-size: 1.1em;">
-                ⚙️ Configuração do Robô
-            </div>
-            
-            <!-- Configurações do Temporizador -->
-            <div class="config-group">
-                <div class="config-title">⏱️ Configurações do Temporizador</div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>Tempo do Timer (segundos):</label>
-                        <input type="number" id="timer_duration" value="2" min="2" max="60" class="config-input">
-                        <small style="color: #666; font-size: 0.8em;">Tempo de espera entre ações (1-60 segundos)</small>
+            <!-- Configurações de Destinatário -->
+            <div class="config-subsection">
+                <h3>📍 Destinatário</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>CPF/CNPJ</label>
+                        <input type="text" id="dest_cpf_cnpj" placeholder="Digite o CPF ou CNPJ">
                     </div>
-                </div>
-            </div>
-            
-            <!-- Identificação -->
-            <div class="config-group">
-                <div class="config-title">📋 Identificação</div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>Destinatário (CPF/CNPJ):</label>
-                        <input type="text" id="destination" value="" placeholder="Ex: 373.249.934-00" class="config-input">
+                    <div class="form-group">
+                        <label>Razão Social</label>
+                        <input type="text" id="dest_razao_social" placeholder="Digite a razão social">
                     </div>
-                    <div class="config-field">
-                        <label>Peso bruto ( Valor da carga ):</label>
-                        <input type="text" id="load_value" value="" placeholder="Ex: 100.00" class="config-input">
+                    <div class="form-group">
+                        <label>CEP</label>
+                        <input type="text" id="dest_cep" placeholder="Digite o CEP">
                     </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>Quantidade carga:</label>
-                        <input type="number" id="quantity" value="" placeholder="Ex: 18" class="config-input">
+                    <div class="form-group">
+                        <label>Inscrição Estadual</label>
+                        <input type="text" id="dest_insc_estadual" placeholder="Digite a inscrição estadual">
                     </div>
-                    <div class="config-field">
-                        <label>Valor do Serviço:</label>
-                        <input type="text" id="service_recipient" value="" placeholder="Ex: 128.99" class="config-input">
-                    </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>Tipo de Carga:</label>
-                        <input type="text" id="type" value="" placeholder="Ex: FIO" class="config-input">
+                    <div class="form-group">
+                        <label>Número</label>
+                        <input type="text" id="dest_numero" placeholder="Digite o número">
                     </div>
                 </div>
             </div>
 
-            <!-- Veículo e Motorista -->
-            <div class="config-group">
-                <div class="config-title">🚚 Veículo e Motorista</div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>Placa do veículo:</label>
-                        <input type="text" id="vehicle" value="" placeholder="Ex: ABZ0A56" class="config-input">
+             <!-- Configurações de Destinatário -->
+            <div class="config-subsection">
+                <h3>🛻 Motorista</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>CPF</label>
+                        <input type="text" id="driver_cpf" placeholder="Digite o CPF ou CNPJ">
                     </div>
-                    <div class="config-field">
-                        <label>CPF do motorista:</label>
-                        <input type="text" id="driver_cpf" value="" placeholder="Ex: 02228021970" class="config-input">
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" id="driver_name" placeholder="Digite o nome">
                     </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>Valor B.C. ICMS:</label>
-                        <input type="text" id="valor_bc_icms" value="" placeholder="Ex: 128,99" class="config-input">
-                    </div>
-                    <div class="config-field">
-                        <label>Valor do ICMS:</label>
-                        <input type="text" id="valor_icms" value="" placeholder="Ex: 18,13" class="config-input">
-                    </div>
+                  
                 </div>
             </div>
 
-            <!-- Documentos -->
-            <div class="config-group">
-                <div class="config-title">📄 Documentos (Chaves de Acesso)</div>
-                <div class="config-field">
-                    <label>Adicionar Chave de Acesso:</label>
-                    <div class="key-input-group">
-                        <input type="text" id="access_key_input" class="config-input" placeholder="Digite ou cole a chave de acesso aqui...">
-                        <button type="button" class="btn btn-add" onclick="addAccessKey()">➕ Adicionar</button>
+            <!-- Configurações de Identificação -->
+            <div class="config-subsection">
+                <h3>📋 Nota Fiscal</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Destinatário</label>
+                        <input type="text" id="note_fiscal_destination" placeholder="Selecione o destinatário">
                     </div>
-                    <div class="keys-list" id="keys_list">
-                        <!-- Chaves serão adicionadas aqui dinamicamente -->
+                    <div class="form-group">
+                        <label>Valor da Carga</label>
+                        <input type="number" id="note_fiscal_load_value" placeholder="Digite o valor">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade</label>
+                        <input type="number" id="note_fiscal_quantity" placeholder="Digite a quantidade">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Carga</label>
+                        <input type="text" id="note_fiscal_type" placeholder="Digite o tipo">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor do Serviço</label>
+                        <input type="number" id="note_fiscal_service_recipient" placeholder="Digite o valor">
+                    </div>
+
+                </div>
+                <div class="config-subsection">
+                    <h3>📄 Documentos (Chaves de Acesso)</h3>
+                    <div class="form-group">
+                        <label>Adicionar Chave de Acesso:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="access_key_input"
+                                placeholder="Digite ou cole a chave de acesso aqui..." style="width: 100%;">
+                            <button type="button" class="btn btn-save" onclick="addAccessKey()"
+                                style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                                <span>➕</span>
+                                <span>Adicionar</span>
+                            </button>
+                        </div>
+                        <div id="keys_list" style="margin-top: 10px;">
+                            <!-- Chaves serão adicionadas aqui dinamicamente -->
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Emissão -->
-            <div class="config-group">
-                <div class="config-title">📤 Emissão</div>
-                <div class="config-row">
-                    <div class="config-field">
+                <!-- Veículo e Motorista -->
+                <div class="config-subsection">
+                    <h3>🚚 Veículo</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Placa do veículo:</label>
+                            <input type="text" id="vehicle" placeholder="Ex: ABZ0A56">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Valor B.C. ICMS:</label>
+                            <input type="text" id="valor_bc_icms" placeholder="Ex: 128,99">
+                        </div>
+                        <div class="form-group">
+                            <label>Valor do ICMS:</label>
+                            <input type="text" id="valor_icms" placeholder="Ex: 18,13">
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- Emissão -->
+                <div class="config-subsection">
+                    <h3>📤 Emissão</h3>
+                    <div class="form-group">
                         <label>Finalidade do CTe:</label>
-                        <select id="finality" class="config-input">
+                        <select id="finality">
                             <option value="0">Normal</option>
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <!-- Reforma Tributária -->
-            <div class="config-group">
-                <div class="config-title">💰 Reforma Tributária</div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>Editar IBS:</label>
-                        <select id="edit_ibs" class="config-input">
-                            <option value="true">Sim</option>
-                            <option value="false">Não</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>V. BC IBS/CBS:</label>
-                        <input type="text" id="v_bc" value="" placeholder="Ex: 128,99" class="config-input">
-                    </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>V. CBS:</label>
-                        <input type="text" id="v_cbs" value="" placeholder="Ex: 18,13" class="config-input">
-                    </div>
-                </div>
-                <div class="config-row">
-                    <div class="config-field">
-                        <label>V. IBS UF / V. IBS:</label>
-                        <input type="text" id="v_ibs" value="" placeholder="Ex: 1,81" class="config-input">
+                <!-- Reforma Tributária -->
+                <div class="config-subsection">
+                    <h3>💰 Reforma Tributária</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Editar IBS:</label>
+                            <select id="edit_ibs">
+                                <option value="true">Sim</option>
+                                <option value="false">Não</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>V. BC IBS/CBS:</label>
+                            <input type="text" id="v_bc" placeholder="Ex: 128,99">
+                        </div>
+                        <div class="form-group">
+                            <label>V. CBS:</label>
+                            <input type="text" id="v_cbs" placeholder="Ex: 18,13">
+                        </div>
+                        <div class="form-group">
+                            <label>V. IBS UF / V. IBS:</label>
+                            <input type="text" id="v_ibs" placeholder="Ex: 1,81">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="config-buttons">
+            <!-- Configurações de Timer -->
+            <div class="config-subsection">
+                <h3>⏱️ Timer</h3>
+                <div class="form-group">
+                    <label>Duração (segundos)</label>
+                    <input type="number" id="timer_duration" value="2" min="1" max="300">
+                </div>
+            </div>
+
+            <div class="config-actions">
                 <button class="btn btn-save" onclick="saveConfig()">
                     💾 Salvar Configuração
-                </button>
-                <button class="btn btn-load" onclick="loadConfig()">
-                    📂 Carregar Configuração
                 </button>
             </div>
         </div>
 
-        
-
+        <!-- Seção de Logs -->
         <div class="log">
             <div class="log-title">📋 Log de Eventos</div>
             <div id="log-content">
@@ -782,16 +1057,14 @@
         let knownPermissions = new Set();
         let pendingPermissions = [];
 
-        // Atualizar status a cada 2 segundos
         setInterval(updateStatus, 2000);
 
         async function updateStatus() {
             try {
-                const response = await fetch('/api/status');
+                const response = await fetch('/api/status', { method: 'GET' });
                 const status = await response.json();
                 currentStatus = status;
-                
-                updateUI(status);
+
                 checkNewPermissions(status.permissionRequests || []);
             } catch (error) {
                 console.error('Erro ao atualizar status:', error);
@@ -813,87 +1086,50 @@
             // Verificar se já existe
             const exists = pendingPermissions.find(p => p.action === action && p.timestamp === timestamp);
             if (exists) return;
-            
+
             const permission = {
                 id: timestamp,
                 action: action,
                 timestamp: timestamp
             };
-            
+
             pendingPermissions.push(permission);
             updatePermissionsList();
-            
+
             addLog(`🔔 Solicitação: ${action}`, 'info');
             showNotification(`Solicitação: ${action}`, 'info');
         }
 
-        function updateUI(status) {
-            const statusDiv = document.getElementById('status');
-            const statusText = document.getElementById('status-text');
-            const runningText = document.getElementById('running-text');
-            const pauseBtn = document.getElementById('pause-btn');
-            const resumeBtn = document.getElementById('resume-btn');
-            const stopBtn = document.getElementById('stop-btn');
-            const startBtn = document.getElementById('start-btn');
 
-            // Atualizar classes de status
-            statusDiv.className = 'status';
-            if (status.isPaused) {
-                statusDiv.classList.add('paused');
-            } else if (status.shouldStop || !status.isRunning) {
-                statusDiv.classList.add('stopped');
-            }
-
-            // Atualizar texto de status
-            if (status.shouldStop) {
-                statusText.textContent = 'Parado';
-                statusText.className = 'status-value stopped';
-                runningText.textContent = 'Finalizado';
-                runningText.className = 'status-value stopped';
-            } else if (status.isPaused) {
-                statusText.textContent = 'Pausado';
-                statusText.className = 'status-value paused';
-                runningText.textContent = 'Pausado';
-                runningText.className = 'status-value paused pulse';
-            } else if (status.isRunning) {
-                statusText.textContent = 'Executando';
-                statusText.className = 'status-value running';
-                runningText.textContent = 'Ativo';
-                runningText.className = 'status-value running';
-            } else {
-                statusText.textContent = 'Aguardando';
-                statusText.className = 'status-value';
-                runningText.textContent = 'Aguardando configuração';
-                runningText.className = 'status-value';
-            }
-
-            // Atualizar estado dos botões
-            startBtn.disabled = status.isRunning || status.shouldStop;
-            pauseBtn.disabled = status.isPaused || status.shouldStop || !status.isRunning;
-            resumeBtn.disabled = !status.isPaused || status.shouldStop;
-            stopBtn.disabled = status.shouldStop;
-        }
-
-        async function startRobot() {
+        async function startAgent() {
             // Primeiro, salvar e enviar a configuração atual para o servidor
-            // if (!validateConfig()) {
-            //     return;
-            // }
+            if (!validateConfig()) {
+                return;
+            }
 
             const config = {
-                identification: {
-                    destination: document.getElementById('destination').value,
-                    load_value: document.getElementById('load_value').value,
-                    quantity: parseInt(document.getElementById('quantity').value),
-                    load_service: 0,
-                    type: document.getElementById('type').value,
-                    service_recipient: parseFloat(document.getElementById('service_recipient').value)
+                driver: {
+                    cpf: document.getElementById('driver_cpf').value,
+                    name: document.getElementById('driver_name').value
+                },
+                destination: {
+                    cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+                    razao_social: document.getElementById('dest_razao_social').value,
+                    cep: document.getElementById('dest_cep').value,
+                    insc_estadual: document.getElementById('dest_insc_estadual').value,
+                    numero: document.getElementById('dest_numero').value
+                },
+                note_fiscal: {
+                    destination: document.getElementById('note_fiscal_destination').value,
+                    load_value: document.getElementById('note_fiscal_load_value').value,
+                    quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
+                    load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
+                    service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value)
                 },
                 taxes: {
                     vehicle: document.getElementById('vehicle').value,
-                    driver_cpf: document.getElementById('driver_cpf').value,
-                    "Valor B.C. ICMS": document.getElementById('valor_bc_icms').value,
-                    "Valor do ICMS": document.getElementById('valor_icms').value
+                    Valor_BC_ICMS: document.getElementById('valor_bc_icms').value,
+                    Valor_ICMS: document.getElementById('valor_icms').value
                 },
                 docs: {
                     access_key: accessKeys
@@ -903,23 +1139,77 @@
                 },
                 tax_reform: {
                     edit_ibs: document.getElementById('edit_ibs').value === 'true',
-                    "V. BC IBS/CBS": document.getElementById('v_bc').value,
-                    "V. CBS": document.getElementById('v_cbs').value,
-                    "V. IBS UF / V. IBS": document.getElementById('v_ibs').value
-                },
-                timer_config: {
-                    duration: parseInt(document.getElementById('timer_duration').value) || 2
+                    Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
+                    Valor_CBS: document.getElementById('v_cbs').value,
+                    Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
                 }
             };
 
-            localStorage.setItem('esg-robot-config', JSON.stringify(config));
             try {
-                const response = await fetch('/api/start-robot', { method: 'POST', body: JSON.stringify(config) });
+                const response = await fetch('/api/start-agente', { method: 'POST', body: JSON.stringify(config), headers: { 'Content-Type': 'application/json' } });
                 const result = await response.json();
-                
+
                 if (result.success) {
-                    document.getElementById('last-action').textContent = 'Robô iniciado';
-                    document.getElementById('start-btn').disabled = true;
+                    addLog('🚀 Agente iniciado com sucesso', 'success');
+                    showNotification('Agente iniciado', 'success');
+                } else {
+                    addLog(`❌ Erro ao iniciar: ${result.message}`, 'error');
+                    showNotification(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao iniciar agente:', error);
+                addLog('❌ Erro ao iniciar agente', 'error');
+                showNotification('Erro ao iniciar agente', 'error');
+            }
+        }
+
+        async function startRobot() {
+            // if (!validateConfig()) {
+            //     return;
+            // }
+
+            const config = {
+                driver: {
+                    cpf: document.getElementById('driver_cpf').value,
+                    name: document.getElementById('driver_name').value
+                },
+                destination: {
+                    cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+                    razao_social: document.getElementById('dest_razao_social').value,
+                    cep: document.getElementById('dest_cep').value,
+                    insc_estadual: document.getElementById('dest_insc_estadual').value,
+                    numero: document.getElementById('dest_numero').value
+                },
+                note_fiscal: {
+                    destination: document.getElementById('note_fiscal_destination').value,
+                    load_value: document.getElementById('note_fiscal_load_value').value,
+                    quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
+                    load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
+                    service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value)
+                },
+                taxes: {
+                    vehicle: document.getElementById('vehicle').value,
+                    Valor_BC_ICMS: document.getElementById('valor_bc_icms').value,
+                    Valor_ICMS: document.getElementById('valor_icms').value
+                },
+                docs: {
+                    access_key: accessKeys
+                },
+                emition: {
+                    finality: document.getElementById('finality').value
+                },
+                tax_reform: {
+                    edit_ibs: document.getElementById('edit_ibs').value === 'true',
+                    Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
+                    Valor_CBS: document.getElementById('v_cbs').value,
+                    Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
+                }
+            };
+            try {
+                const response = await fetch('/api/start-robot', { method: 'POST', body: JSON.stringify(config), headers: { 'Content-Type': 'application/json' } });
+                const result = await response.json();
+
+                if (result.success) {
                     addLog('🚀 Robô iniciado com sucesso', 'success');
                     showNotification('Robô iniciado', 'success');
                 } else {
@@ -933,7 +1223,7 @@
             }
         }
 
-       
+
         function addPermissionRequest(action) {
             const permissionId = Date.now();
             const permission = {
@@ -941,10 +1231,10 @@
                 action: action,
                 timestamp: new Date()
             };
-            
+
             pendingPermissions.push(permission);
             updatePermissionsList();
-            
+
             addLog(`🔔 Solicitação: ${action}`, 'info');
             showNotification(`Solicitação: ${action}`, 'info');
         }
@@ -952,15 +1242,15 @@
         function updatePermissionsList() {
             const permissionsDiv = document.getElementById('permissions');
             const permissionsList = document.getElementById('permissions-list');
-            
+
             if (pendingPermissions.length === 0) {
                 permissionsDiv.style.display = 'none';
                 return;
             }
-            
+
             permissionsDiv.style.display = 'block';
             permissionsList.innerHTML = '';
-            
+
             pendingPermissions.forEach(permission => {
                 const permissionItem = document.createElement('div');
                 permissionItem.className = 'permission-item';
@@ -982,7 +1272,7 @@
         async function grantPermission(permissionId, granted) {
             const permission = pendingPermissions.find(p => p.id === permissionId);
             if (!permission) return;
-            
+
             try {
                 const response = await fetch('/api/grant-permission', {
                     method: 'POST',
@@ -994,16 +1284,16 @@
                         granted: granted
                     })
                 });
-                
+
                 const result = await response.json();
                 if (result.success) {
                     pendingPermissions = pendingPermissions.filter(p => p.id !== permissionId);
                     updatePermissionsList();
-                    
-                    addLog(`${granted ? '✅' : '❌'} ${permission.action}: ${granted ? 'PERMITIDO' : 'NEGADO'}`, 
-                           granted ? 'success' : 'error');
-                    showNotification(`${permission.action}: ${granted ? 'Permitido' : 'Negado'}`, 
-                                   granted ? 'success' : 'error');
+
+                    addLog(`${granted ? '✅' : '❌'} ${permission.action}: ${granted ? 'PERMITIDO' : 'NEGADO'}`,
+                        granted ? 'success' : 'error');
+                    showNotification(`${permission.action}: ${granted ? 'Permitido' : 'Negado'}`,
+                        granted ? 'success' : 'error');
                 }
             } catch (error) {
                 console.error('Erro ao conceder permissão:', error);
@@ -1017,7 +1307,7 @@
             const logEntry = document.createElement('div');
             logEntry.className = `log-entry ${type}`;
             logEntry.textContent = `[${timestamp}] ${message}`;
-            
+
             logContent.appendChild(logEntry);
             logContent.scrollTop = logContent.scrollHeight;
 
@@ -1031,7 +1321,7 @@
             const notification = document.createElement('div');
             notification.className = 'notification';
             notification.textContent = message;
-            
+
             if (type === 'success') {
                 notification.style.background = '#28a745';
             } else if (type === 'error') {
@@ -1039,9 +1329,9 @@
             } else if (type === 'warning') {
                 notification.style.background = '#ffc107';
             }
-            
+
             document.body.appendChild(notification);
-            
+
             setTimeout(() => {
                 notification.remove();
             }, 3000);
@@ -1058,17 +1348,17 @@
         function addAccessKey() {
             const input = document.getElementById('access_key_input');
             const key = input.value.trim();
-            
+
             if (!key) {
                 showNotification('Digite uma chave de acesso', 'error');
                 return;
             }
-            
+
             if (accessKeys.includes(key)) {
                 showNotification('Esta chave já foi adicionada', 'error');
                 return;
             }
-            
+
             accessKeys.push(key);
             input.value = '';
             updateKeysList();
@@ -1085,12 +1375,12 @@
         // Atualizar lista visual de chaves
         function updateKeysList() {
             const keysList = document.getElementById('keys_list');
-            
+
             if (accessKeys.length === 0) {
                 keysList.innerHTML = '<div class="empty-keys">Nenhuma chave de acesso adicionada</div>';
                 return;
             }
-            
+
             keysList.innerHTML = accessKeys.map((key, index) => `
                 <div class="key-item">
                     <span class="key-text">${key}</span>
@@ -1100,25 +1390,30 @@
         }
 
         // Adicionar evento Enter no input
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const input = document.getElementById('access_key_input');
-            input.addEventListener('keypress', function(e) {
+            input.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     addAccessKey();
                 }
             });
-            
+
             // Inicializar lista vazia
             updateKeysList();
         });
 
         function validateConfig() {
             const requiredFields = [
-                { id: 'destination', name: 'Destinatário' },
-                { id: 'load_value', name: 'Valor da Carga' },
-                { id: 'quantity', name: 'Quantidade' },
-                { id: 'service_recipient', name: 'Valor do Serviço' },
-                { id: 'type', name: 'Tipo de Carga' },
+                { id: 'note_fiscal_destination', name: 'Destino' },
+                { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
+                { id: 'note_fiscal_quantity', name: 'Quantidade' },
+                { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
+                { id: 'note_fiscal_type', name: 'Tipo de Carga' },
+                { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
+                { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
+                { id: 'dest_cep', name: 'CEP do destinatário' },
+                { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
+                { id: 'dest_numero', name: 'Número do destinatário' },
                 { id: 'vehicle', name: 'Veículo' },
                 { id: 'driver_cpf', name: 'CPF Motorista' },
                 { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
@@ -1147,18 +1442,28 @@
             }
 
             const config = {
-                identification: {
-                    destination: document.getElementById('destination').value,
-                    load_value: document.getElementById('load_value').value,
-                    quantity: parseInt(document.getElementById('quantity').value),
-                    load_service: parseFloat(document.getElementById('service_recipient').value),
-                    service_recipient: parseFloat(document.getElementById('service_recipient').value)
+                driver: {
+                    cpf: document.getElementById('driver_cpf').value,
+                    name: document.getElementById('driver_name').value
+                },
+                destination: {
+                    cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+                    razao_social: document.getElementById('dest_razao_social').value,
+                    cep: document.getElementById('dest_cep').value,
+                    insc_estadual: document.getElementById('dest_insc_estadual').value,
+                    numero: document.getElementById('dest_numero').value
+                },
+                note_fiscal: {
+                    destination: document.getElementById('note_fiscal_destination').value,
+                    load_value: document.getElementById('note_fiscal_load_value').value,
+                    quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
+                    load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
+                    service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value)
                 },
                 taxes: {
                     vehicle: document.getElementById('vehicle').value,
-                    driver_cpf: document.getElementById('driver_cpf').value,
-                    "Valor B.C. ICMS": document.getElementById('valor_bc_icms').value,
-                    "Valor do ICMS": document.getElementById('valor_icms').value
+                    Valor_BC_ICMS: document.getElementById('valor_bc_icms').value,
+                    Valor_ICMS: document.getElementById('valor_icms').value
                 },
                 docs: {
                     access_key: accessKeys
@@ -1168,80 +1473,20 @@
                 },
                 tax_reform: {
                     edit_ibs: document.getElementById('edit_ibs').value === 'true',
-                    "V. BC IBS/CBS": document.getElementById('v_bc').value,
-                    "V. CBS": document.getElementById('v_cbs').value,
-                    "V. IBS": document.getElementById('v_ibs').value
+                    Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
+                    Valor_CBS: document.getElementById('v_cbs').value,
+                    Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
                 }
             };
 
-            localStorage.setItem('esg-robot-config', JSON.stringify(config));
             showNotification('Configuração salva com sucesso!', 'success');
         }
-
-        function loadConfig() {
-            const saved = localStorage.getItem('esg-robot-config');
-            if (!saved) {
-                showNotification('Nenhuma configuração salva encontrada', 'warning');
-                return;
-            }
-
-            const config = JSON.parse(saved);
-
-            // Carregar identificação
-            if (config.identification) {
-                document.getElementById('destination').value = config.identification.destination || '';
-                document.getElementById('load_value').value = config.identification.load_value || '';
-                document.getElementById('quantity').value = config.identification.quantity || '';
-                document.getElementById('type').value = config.identification.type || '';
-                document.getElementById('service_recipient').value = config.identification.service_recipient || '';
-            }
-
-            // Carregar taxes
-            if (config.taxes) {
-                document.getElementById('vehicle').value = config.taxes.vehicle || '';
-                document.getElementById('driver_cpf').value = config.taxes.driver_cpf || '';
-                document.getElementById('valor_bc_icms').value = config.taxes["Valor B.C. ICMS"] || '';
-                document.getElementById('valor_icms').value = config.taxes["Valor do ICMS"] || '';
-            }
-
-            // Carregar chaves de acesso
-            if (config.docs && config.docs.access_key) {
-                accessKeys = config.docs.access_key;
-                updateKeysList();
-            }
-
-            // Carregar emissão
-            if (config.emition) {
-                document.getElementById('finality').value = config.emition.finality || '0';
-            }
-
-            // Carregar reforma tributária
-            if (config.tax_reform) {
-                document.getElementById('edit_ibs').value = config.tax_reform.edit_ibs ? 'true' : 'false';
-                document.getElementById('v_bc').value = config.tax_reform["V. BC IBS/CBS"] || '';
-                document.getElementById('v_cbs').value = config.tax_reform["V. CBS"] || '';
-                document.getElementById('v_ibs').value = config.tax_reform["V. IBS UF / V. IBS"] || '';
-            }
-
-            // Carregar configurações do temporizador
-            if (config.timer_config) {
-                document.getElementById('timer_duration').value = config.timer_config.duration || 2;
-            }
-
-            showNotification('Configuração carregada com sucesso!', 'success');
-        }
-
-        window.addEventListener('load', () => {
-            loadConfig();
-        });
-
-        // ===== FUNÇÕES DE CADASTRO =====
 
         // Fazer Login
         function fazerLogin() {
             showNotification('🚀 Iniciando processo de login...', 'info');
             addLog('🔐 Iniciando processo de login', 'info');
-            
+
             // Enviar requisição para executar o login
             fetch('/api/fazer-login', {
                 method: 'POST',
@@ -1249,28 +1494,28 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('✅ Login executado com sucesso', 'success');
-                    addLog('✅ Processo de login concluído', 'success');
-                } else {
-                    showNotification('❌ Erro ao fazer login', 'error');
-                    addLog('❌ Erro: ' + (data.message || 'Falha no login'), 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                showNotification('❌ Erro de conexão com o servidor', 'error');
-                addLog('❌ Erro de conexão ao fazer login', 'error');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('✅ Login executado com sucesso', 'success');
+                        addLog('✅ Processo de login concluído', 'success');
+                    } else {
+                        showNotification('❌ Erro ao fazer login', 'error');
+                        addLog('❌ Erro: ' + (data.message || 'Falha no login'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showNotification('❌ Erro de conexão com o servidor', 'error');
+                    addLog('❌ Erro de conexão ao fazer login', 'error');
+                });
         }
 
         // Cadastro de Motorista
         function cadastrarMotorista() {
             showNotification('🚀 Iniciando cadastro de motorista...', 'info');
             addLog('👤 Iniciando processo de cadastro de motorista', 'info');
-            
+
             // Enviar requisição para executar o cadastro de motorista
             fetch('/api/cadastro-motorista', {
                 method: 'POST',
@@ -1278,28 +1523,28 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('✅ Cadastro de motorista iniciado com sucesso', 'success');
-                    addLog('✅ Processo de cadastro de motorista iniciado', 'success');
-                } else {
-                    showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
-                    addLog('❌ Erro: ' + (data.message || 'Falha ao iniciar cadastro'), 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                showNotification('❌ Erro de conexão com o servidor', 'error');
-                addLog('❌ Erro de conexão ao iniciar cadastro de motorista', 'error');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('✅ Cadastro de motorista iniciado com sucesso', 'success');
+                        addLog('✅ Processo de cadastro de motorista iniciado', 'success');
+                    } else {
+                        showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
+                        addLog('❌ Erro: ' + (data.message || 'Falha ao iniciar cadastro'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showNotification('❌ Erro de conexão com o servidor', 'error');
+                    addLog('❌ Erro de conexão ao iniciar cadastro de motorista', 'error');
+                });
         }
 
         // Registrar Destinatário
         function registrarDestinatario() {
             showNotification('🚀 Iniciando registro de destinatário...', 'info');
             addLog('🏢 Iniciando processo de registro de destinatário', 'info');
-            
+
             // Enviar requisição para executar o registro de destinatário
             fetch('/api/registrar-destinatario', {
                 method: 'POST',
@@ -1307,31 +1552,31 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('✅ Registro de destinatário iniciado com sucesso', 'success');
-                    addLog('✅ Processo de registro de destinatário iniciado', 'success');
-                } else {
-                    showNotification('❌ Erro ao registrar destinatário', 'error');
-                    addLog('❌ Erro: ' + (data.message || 'Falha ao registrar destinatário'), 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                showNotification('❌ Erro de conexão com o servidor', 'error');
-                addLog('❌ Erro de conexão ao registrar destinatário', 'error');
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('✅ Registro de destinatário iniciado com sucesso', 'success');
+                        addLog('✅ Processo de registro de destinatário iniciado', 'success');
+                    } else {
+                        showNotification('❌ Erro ao registrar destinatário', 'error');
+                        addLog('❌ Erro: ' + (data.message || 'Falha ao registrar destinatário'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showNotification('❌ Erro de conexão com o servidor', 'error');
+                    addLog('❌ Erro de conexão ao registrar destinatário', 'error');
+                });
         }
 
         // Cadastro de Caminhão
         function cadastrarCaminhao() {
             showNotification('🚀 Iniciando cadastro de caminhão...', 'info');
             addLog('🚚 Iniciando processo de cadastro de caminhão', 'info');
-            
+
             // Aqui você pode adicionar a lógica para abrir o formulário de cadastro
             // ou redirecionar para a página de cadastro de caminhão
-            
+
             setTimeout(() => {
                 showNotification('📝 Formulário de caminhão pronto para preenchimento', 'success');
                 addLog('✅ Formulário de caminhão aberto', 'success');
@@ -1342,10 +1587,10 @@
         function criarCTE() {
             showNotification('🚀 Iniciando criação de CTe...', 'info');
             addLog('📄 Iniciando processo de criação de CTe', 'info');
-            
+
             // Aqui você pode adicionar a lógica para abrir o formulário de CTe
             // ou redirecionar para a página de criação de CTe
-            
+
             setTimeout(() => {
                 showNotification('📝 Formulário de CTe pronto para preenchimento', 'success');
                 addLog('✅ Formulário de CTe aberto', 'success');
@@ -1353,4 +1598,5 @@
         }
     </script>
 </body>
+
 </html>
