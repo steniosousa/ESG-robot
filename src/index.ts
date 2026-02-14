@@ -62,44 +62,33 @@ let robotCanStart = false;
 function requestPermission(action: string): Promise<boolean> {
     console.log(`\n🔔 Aguardando permissão para: ${action}`);
     console.log('📱 Acesse a janela de controle para permitir ou negar');
+    console.log(`🌐 Servidor rodando em http://localhost:3000`);
 
     return new Promise((resolve) => {
         pendingPermission = { action, resolve };
-
-        // Adicionar à lista de solicitações
         permissionRequests.push({
             action,
             timestamp: Date.now()
         });
+        console.log(`✅ Solicitação de permissão adicionada: ${action}`);
 
-        // Timeout de 30 segundos se não houver resposta
         setTimeout(() => {
             if (pendingPermission && pendingPermission.action === action) {
                 console.log(`⏰ Timeout: Permissão para "${action}" não respondida. Negando automaticamente.`);
                 pendingPermission.resolve(false);
                 pendingPermission = null;
-                // Remover da lista
                 permissionRequests = permissionRequests.filter(req => req.action !== action);
             }
         }, 9000000);
     });
 }
 
-async function waitForResume(action?: string) {
-    while (isPaused && !shouldStop) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    if (shouldStop) {
-        throw new Error("Processo interrompido pelo usuário");
-    }
-}
 
 function createControlServer() {
     const app = express();
     app.use(express.json());
     app.use(express.static(path.join(__dirname, '../public')));
 
-    // Endpoint para obter status atual
     app.get('/api/status', (req, res) => {
         res.json({
             isPaused,
@@ -247,7 +236,8 @@ async function openControlWindow() {
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
-            "--window-size=400,600"
+            "--window-size=400,600",
+            "--disable-features=DefaultBrowserSecurityFeatures"
         ]
     });
 
@@ -268,7 +258,6 @@ async function clearAndType(selector: string, value: string) {
 
 const timer = async () => {
     for (let i = 0; i < timerDuration; i++) {
-        await waitForResume();
         await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo por iteração
     }
 };
@@ -349,266 +338,263 @@ async function main() {
     createControlServer();
     openControlWindow();
 
-    console.log("⏳ Aguardando configuração e autorização para iniciar...");
-    console.log("📱 Preencha os dados no painel de controle e clique em 'Iniciar Robô'");
-
     while (!robotCanStart && !shouldStop) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         if (shouldStop) {
-            console.log("🛑 Processo interrompido antes de iniciar");
             return;
         }
     }
-
-    console.log("🚀 Iniciando robô de web scraping para ESG...");
-    console.log("🌐 Janela de controle será aberta ao lado");
-
-    await waitForResume();
-
 
     browser = await puppeteer.launch({ headless: false, defaultViewport: null, args: ["--no-sandbox", "--disable-setuid-sandbox"] });
     page = await browser.newPage();
 
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-
-    console.log("Acessando página de login...");
-    await waitForResume();
-
     await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
-    const currentUrl = page.url();
 
-    if (currentUrl.includes("login")) {
+    const processCurrent = async () => {
+        const currentUrl = page.url();
 
-        const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
+        if (currentUrl.includes("login")) {
 
-        if (hasCaptcha) {
-            console.log("Verificação de robô detectada! Aguardando você resolver...");
-        }
-
-        await timer()
-        await waitForResume();
-
-        await page.waitForSelector('input[name="login"]', { timeout: 10000 });
-        await page.type('input[name="login"]', login);
-
-        await page.waitForSelector('input[name="senha"]', { timeout: 10000 });
-        await page.type('input[name="senha"]', password);
-
-        await page.waitForSelector('input[name="chaveAcesso"]', { timeout: 10000 });
-        await page.type('input[name="chaveAcesso"]', key);
-
-        const submitButton = await page.$('button[type="submit"]');
-        if (submitButton) {
-            await submitButton.click();
-        } else {
-            readlineSync.question("NÃO FOI POSSÍVEL ENCONTRAR O BOTÃO DE SUBMIT");
-        }
-
-        await timer()
-        await waitForResume();
-        await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
-
-        await page.goto("https://app.egssistemas.com.br/cadastro-geral", { waitUntil: "domcontentloaded", timeout: 30000 });
-
-        await timer()
-        await waitForResume();
-        await page.waitForSelector(`td:nth-of-type(3) input[aria-label="Filtro de célula"]`, { timeout: 10000 });
-
-        await page.type(`td:nth-of-type(3) input[aria-label="Filtro de célula"]`, destination_register["cpf/cnpj"]);
-        await timer()
-
-        // Aguarda o container da tabela aparecer
-        await page.waitForSelector('.dx-datagrid-table');
-
-        // Seleciona todas as linhas de dados
-        const rows = await page.$$('.dx-datagrid-table tbody tr.dx-data-row');
-
-        if (rows.length === 0) {
-            console.log("AVISO: A lista não foi encontrada ou está vazia.");
-            await page.click("egs-button-new button")
-            await page.waitForSelector("input[name='cpfCnpj']", { timeout: 10000 });
-            await page.locator("input[name='cpfCnpj']").fill(destination_register["cpf/cnpj"]);
-            if (destination_register["cpf/cnpj"].length === 14) {
-                await page.waitForSelector("span[id='butonConsultaCpfCnpj']", { state: 'visible' });
-                await page.click("span[id='butonConsultaCpfCnpj']");
-            } else {
-                await page.locator("input[name='RAZAOSOCIAL']").fill(destination_register["Razão Social"]);
-                // Seleciona o input que possui o atributo da máscara de CEP brasileira
-                const selector = 'input[ui-br-cep-mask]';
-
-                await page.locator(selector).fill(destination_register["cep"]);
-                await page.click("#buttonCep");
-
-                // Localiza o input que tem o placeholder "Ex.: 000"
-                const numeroSelector = 'input[placeholder="Ex.: 000"]';
-
-                await page.waitForSelector(numeroSelector, { state: 'visible' });
-                await page.locator(numeroSelector).fill(destination_register["numero"]);
+            const doLogin = await requestPermission("Fazer login?");
+            if (!doLogin) {
+                return;
             }
-            // Antes de digitar a Inscrição Estadual, garanta que o campo está vazio e focado
-            const ieSelector = "input[name='inscEstadual']";
-            await page.waitForSelector(ieSelector);
-            await page.locator(ieSelector).fill(""); // Limpa qualquer resíduo que tenha "vazado"
-            await page.locator(ieSelector).fill(destination_register["Inscr.estadual"]);
 
+            const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
+
+            if (hasCaptcha) {
+                console.log("Verificação de robô detectada! Aguardando você resolver...");
+            }
+
+            await timer()
+
+            await page.waitForSelector('input[name="login"]', { timeout: 10000 });
+            await page.type('input[name="login"]', login);
+
+            await page.waitForSelector('input[name="senha"]', { timeout: 10000 });
+            await page.type('input[name="senha"]', password);
+
+            await page.waitForSelector('input[name="chaveAcesso"]', { timeout: 10000 });
+            await page.type('input[name="chaveAcesso"]', key);
+
+            const submitButton = await page.$('button[type="submit"]');
+            if (submitButton) {
+                await submitButton.click();
+            } else {
+                readlineSync.question("NÃO FOI POSSÍVEL ENCONTRAR O BOTÃO DE SUBMIT");
+            }
+
+            await timer()
+            await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
+
+            await page.goto("https://app.egssistemas.com.br/cadastro-geral", { waitUntil: "domcontentloaded", timeout: 30000 });
+            processCurrent()
         }
 
-        return
+        if (currentUrl.includes("cadastro-geral")) {
+            await timer()
+
+            await page.waitForSelector(`td:nth-of-type(3) input[aria-label="Filtro de célula"]`, { timeout: 10000 });
+
+            await page.type(`td:nth-of-type(3) input[aria-label="Filtro de célula"]`, destination_register["cpf/cnpj"]);
+            await timer()
+
+            await page.waitForSelector('.dx-datagrid-table');
+            const rows = await page.$$('.dx-datagrid-table tbody tr.dx-data-row');
+
+            if (rows.length === 0) {
+                await page.click("egs-button-new button")
+                await page.waitForSelector("input[name='cpfCnpj']", { timeout: 10000 });
+                await page.locator("input[name='cpfCnpj']").fill(destination_register["cpf/cnpj"]);
+                if (destination_register["cpf/cnpj"].length === 14) {
+                    await page.waitForSelector("span[id='butonConsultaCpfCnpj']", { state: 'visible' });
+                    await page.click("span[id='butonConsultaCpfCnpj']");
+                } else {
+                    await page.locator("input[name='RAZAOSOCIAL']").fill(destination_register["Razão Social"]);
+                    // Seleciona o input que possui o atributo da máscara de CEP brasileira
+                    const selector = 'input[ui-br-cep-mask]';
+
+                    await page.locator(selector).fill(destination_register["cep"]);
+                    await page.click("#buttonCep");
+
+                    // Localiza o input que tem o placeholder "Ex.: 000"
+                    const numeroSelector = 'input[placeholder="Ex.: 000"]';
+
+                    await page.waitForSelector(numeroSelector, { state: 'visible' });
+                    await page.locator(numeroSelector).fill(destination_register["numero"]);
+                }
+                // Antes de digitar a Inscrição Estadual, garanta que o campo está vazio e focado
+                const ieSelector = "input[name='inscEstadual']";
+                await page.waitForSelector(ieSelector);
+                await page.locator(ieSelector).fill(""); // Limpa qualquer resíduo que tenha "vazado"
+                await page.locator(ieSelector).fill(destination_register["Inscr.estadual"]);
 
 
+                const shouldContinue = await requestPermission("Continuar para emissão de CTe?");
+                if (shouldContinue) {
+                    await page.click("egs-button-save-popup button");
+                } else {
+                    console.log("🛑 Processo interrompido pelo usuário");
+                }
 
-    }
+            }
 
-    if (currentUrl.includes("cadastro-geral")) {
-    }
+            await page.goto("https://app.egssistemas.com.br/cte-emissao", { waitUntil: "domcontentloaded", timeout: 30000 });
 
-    if (currentUrl.includes("cte-emissao")) {
-        await timer()
-        await waitForResume();
-        await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
-        await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-        const canClickCopy = await requestPermission("Clicar no botão copiar");
-
-        if (canClickCopy) {
-            await page.click("button[data-original-title='Copiar']");
+            processCurrent()
         }
 
-        await timer()
-        await waitForResume();
-        await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
-
-        await clearAndSelectOption('destinatario', identification.destination);
-        await clearAndSelectOption('destinatario', identification.destination);
-
-        await clearAndType('valorCarga', identification.load_value);
-
-        await clearAndType('prodPredominante', identification.type);
-        await clearAndType('tipoCarga', identification.type);
-
-        await clearAndType('qtdeCarga', identification.quantity.toString());
-
-        await clearAndType('valorServico', identification.service_recipient.toString());
-
-        await clearAndType('valorReceber', identification.service_recipient.toString());
-
-        await page.click('li[id="cteNormal"]');
-
-
-        //page taxes
-        await waitForResume();
-
-        await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
-
-
-        await clearAndSelectOption('IDVEICULO', taxes.vehicle);
-
-
-        await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
-
-        await clearAndType('valorbcICMS', taxes['Valor B.C. ICMS']);
-        await clearAndType('valorIcms', taxes['Valor do ICMS']);
-
-        await page.click('li[id="documentos"]');
-
-
-
-        //notas
-        await waitForResume();
-        await page.waitForSelector('div[class="dx-checkbox-container"]', { timeout: 10000 });
-        await page.click('div[class="dx-checkbox-container"]');
-
-        await timer()
-
-        await page.click('egs-button-delete');
-
-        await timer()
-        await page.waitForSelector('button[id="btnSimConfirm"]', { timeout: 10000 });
-
-        await page.click('button[id="btnSimConfirm"]');
-
-        await waitForResume();
-        await page.waitForSelector('egs-combobox-tabela[name="cClassTribIBSCBS"]', { timeout: 10000 });
-
-
-        for (const key of docs.access_key) {
+        if (currentUrl.includes("cte-emissao")) {
             await timer()
-            await page.click('egs-button-new')
+
+            await page.waitForSelector("div[class*='box-emissor-hover']", { timeout: 10000 });
+            await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
+            const canClickCopy = await requestPermission("Clicar no botão copiar");
+
+            if (canClickCopy) {
+                await page.click("button[data-original-title='Copiar']");
+            }
+
             await timer()
-            await page.waitForSelector('input[name="CHAVENFE"]', { timeout: 20000 });
-            await page.type('input[name="CHAVENFE"]', key)
-            await page.waitForSelector('egs-button-save-popup button', { timeout: 20000 });
+
+            await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
+
+            await clearAndSelectOption('destinatario', identification.destination);
+            await clearAndSelectOption('destinatario', identification.destination);
+
+            await clearAndType('valorCarga', identification.load_value);
+
+            await clearAndType('prodPredominante', identification.type);
+            await clearAndType('tipoCarga', identification.type);
+
+            await clearAndType('qtdeCarga', identification.quantity.toString());
+
+            await clearAndType('valorServico', identification.service_recipient.toString());
+
+            await clearAndType('valorReceber', identification.service_recipient.toString());
+
+            await page.click('li[id="cteNormal"]');
+
+
+            //page taxes
+
+
+            await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
+
+
+            await clearAndSelectOption('IDVEICULO', taxes.vehicle);
+
+
+            await clearAndSelectOption("IDMOTORISTA", taxes.driver_cpf);
+
+            await clearAndType('valorbcICMS', taxes['Valor B.C. ICMS']);
+            await clearAndType('valorIcms', taxes['Valor do ICMS']);
+
+            await page.click('li[id="documentos"]');
+
+
+
+            //notas
+
+            await page.waitForSelector('div[class="dx-checkbox-container"]', { timeout: 10000 });
+            await page.click('div[class="dx-checkbox-container"]');
+
+            await timer()
+
+            await page.click('egs-button-delete');
+
+            await timer()
+            await page.waitForSelector('button[id="btnSimConfirm"]', { timeout: 10000 });
+
+            await page.click('button[id="btnSimConfirm"]');
+
+
+            await page.waitForSelector('egs-combobox-tabela[name="cClassTribIBSCBS"]', { timeout: 10000 });
+
+
+            for (const key of docs.access_key) {
+                await timer()
+                await page.click('egs-button-new')
+                await timer()
+                await page.waitForSelector('input[name="CHAVENFE"]', { timeout: 20000 });
+                await page.type('input[name="CHAVENFE"]', key)
+                await page.waitForSelector('egs-button-save-popup button', { timeout: 20000 });
+                await page.click('egs-button-save-popup button')
+                await timer()
+            }
+
+            await timer()
+
+
+            //emissao
+            await page.click('li[id="emissao"]');
+            await clearAndSelectOption('finalidadeCte', emition.finality);
+
+
+
+            //obs
+            await page.waitForSelector('a[link-id="cteNormal"]');
+            await page.evaluate(() => {
+                const elements = document.querySelectorAll('a[link-id="cteNormal"]');
+                const elementsArray = Array.from(elements);
+                for (const element of elementsArray) {
+                    if (element.textContent.trim() === 'Obs. Cont.') {
+                        (element as HTMLElement).click();
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            await timer()
+            await page.click('egs-button-new[ng-click="novo(Observacoes)"] button');
+            await timer()
+            await clearAndType('observacoes', "new item");
             await page.click('egs-button-save-popup button')
             await timer()
+            await page.evaluate(() => {
+                const rowCheckboxes = document.querySelectorAll('.dx-data-row .dx-checkbox-icon') as NodeListOf<HTMLElement>;
+
+                if (rowCheckboxes.length > 0) {
+                    rowCheckboxes.forEach(cb => cb.click());
+                } else {
+                    console.warn("Nenhuma linha encontrada para selecionar.");
+                }
+            });
+
+            await timer()
+            const botaoExcluir = 'egs-button-delete[ng-click="excluir(Observacoes)"]';
+            await page.click(botaoExcluir);
+            await timer()
+            const seletorSim = '#btnSimConfirm';
+            await page.waitForSelector(seletorSim, { visible: true });
+            await page.click(seletorSim);
+
+
+            //reforma tributaria
+            await page.click('li[id="ReformaTrib"]');
+
+            await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
+
+            await clearAndType('vCBS', tax_reform['V. CBS']);
+
+            await clearAndType('vIBS', tax_reform['V. IBS UF / V. IBS']);
+
+            await clearAndType('vIBSUF', tax_reform['V. IBS UF / V. IBS']);
+
+
+            // const canClickSave = await requestPermission("Clicar no botão salvar");
+
+            // if (canClickSave) {
+            //     await page.click('egs-button-save-form button');
+            // }
+            processCurrent()
         }
 
-        await timer()
-
-
-        //emissao
-        await page.click('li[id="emissao"]');
-        await clearAndSelectOption('finalidadeCte', emition.finality);
-
-
-
-        //obs
-        await page.waitForSelector('a[link-id="cteNormal"]');
-        await page.evaluate(() => {
-            const elements = document.querySelectorAll('a[link-id="cteNormal"]');
-            const elementsArray = Array.from(elements);
-            for (const element of elementsArray) {
-                if (element.textContent.trim() === 'Obs. Cont.') {
-                    (element as HTMLElement).click();
-                    return true;
-                }
-            }
-            return false;
-        });
-
-        await timer()
-        await page.click('egs-button-new[ng-click="novo(Observacoes)"] button');
-        await timer()
-        await clearAndType('observacoes', "new item");
-        await page.click('egs-button-save-popup button')
-        await timer()
-        await page.evaluate(() => {
-            const rowCheckboxes = document.querySelectorAll('.dx-data-row .dx-checkbox-icon') as NodeListOf<HTMLElement>;
-
-            if (rowCheckboxes.length > 0) {
-                rowCheckboxes.forEach(cb => cb.click());
-            } else {
-                console.warn("Nenhuma linha encontrada para selecionar.");
-            }
-        });
-
-        await timer()
-        const botaoExcluir = 'egs-button-delete[ng-click="excluir(Observacoes)"]';
-        await page.click(botaoExcluir);
-        await timer()
-        const seletorSim = '#btnSimConfirm';
-        await page.waitForSelector(seletorSim, { visible: true });
-        await page.click(seletorSim);
-
-
-        //reforma tributaria
-        await page.click('li[id="ReformaTrib"]');
-
-        await clearAndType('vBC', tax_reform['V. BC IBS/CBS']);
-
-        await clearAndType('vCBS', tax_reform['V. CBS']);
-
-        await clearAndType('vIBS', tax_reform['V. IBS UF / V. IBS']);
-
-        await clearAndType('vIBSUF', tax_reform['V. IBS UF / V. IBS']);
-
-
-        // const canClickSave = await requestPermission("Clicar no botão salvar");
-
-        // if (canClickSave) {
-        //     await page.click('egs-button-save-form button');
-        // }
     }
-    //page copy
+    processCurrent()
 
 }
 // await browser.close();
