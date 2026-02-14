@@ -125,10 +125,14 @@ const creations = {
 
         if (isEmpty) {
             await page.click("egs-button-new button");
+            await timer();
             clearAndType("cpfCnpj", cpf_cnpj);
-
+            await timer();
+            console.log(cpf_cnpj.length)
             if (cpf_cnpj.length === 14) {
-                await page.click("#butonConsultaCpfCnpj");
+                await page.waitForSelector("span[id='butonConsultaCpfCnpj']", { state: 'visible' });
+                await timer();
+                await page.click("span[id='butonConsultaCpfCnpj']");
             } else {
                 await timer()
                 const selector = 'input[ui-br-cep-mask]';
@@ -452,6 +456,9 @@ async function openControlWindow() {
     await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
     await controlPage.goto("http://localhost:3000");
 
+    // Armazena o browser para ser usado pelo robô principal
+    browser = controlBrowser;
+
     return controlBrowser;
 }
 
@@ -465,6 +472,7 @@ async function clearAndType(name: string, value: string) {
 
     await page.waitForSelector(selector, { timeout: 10000 });
     await page.locator(selector).fill(value);
+    await timer();
 
 }
 
@@ -475,7 +483,6 @@ const timer = async () => {
 };
 
 async function clearAndSelectOption(name: string, value: string) {
-    // 1. Define o seletor do componente pai (wrapper)
     const wrappers: Record<string, string> = {
         'IDVEICULO': `egs-gveiculo[name="${name}"]`,
         'finalidadeCte': `egs-cte-finalidade[name="${name}"]`,
@@ -484,7 +491,6 @@ async function clearAndSelectOption(name: string, value: string) {
 
     const wrapperSelector = wrappers[name] || wrappers['DEFAULT'];
 
-    // 2. Limpa a seleção atual (clica no botão de fechar/limpar se existir)
     await page.evaluate((selector: string) => {
         const btn = document.querySelector(selector)?.querySelector('span#closeBtn');
         (btn as HTMLElement)?.click();
@@ -533,13 +539,8 @@ async function main() {
         }
     }
 
-    browser = await puppeteer.launch({
-        headless: false,
-        defaultViewport: null,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    });
+    // Usa o browser existente e cria uma nova aba
     page = await browser.newPage();
-
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 }
 
