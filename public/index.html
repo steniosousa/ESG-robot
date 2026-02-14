@@ -1164,9 +1164,9 @@
         }
 
         async function startRobot() {
-            // if (!validateConfig()) {
-            //     return;
-            // }
+            if (!validateConfig()) {
+                return;
+            }
 
             const config = {
                 driver: {
@@ -1174,11 +1174,11 @@
                     name: document.getElementById('driver_name').value
                 },
                 destination: {
-                    cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
-                    razao_social: document.getElementById('dest_razao_social').value,
-                    cep: document.getElementById('dest_cep').value,
-                    insc_estadual: document.getElementById('dest_insc_estadual').value,
-                    numero: document.getElementById('dest_numero').value
+                    cpf_cnpj: '82462566023',
+                    razao_social:'yes',
+                    cep: '70070-120',
+                    insc_estadual: 'yes',
+                    numero: '123'
                 },
                 note_fiscal: {
                     destination: document.getElementById('note_fiscal_destination').value,
@@ -1420,18 +1420,18 @@
                 { id: 'valor_icms', name: 'Valor ICMS' }
             ];
 
-            for (const field of requiredFields) {
-                const value = document.getElementById(field.id).value.trim();
-                if (!value) {
-                    showNotification(`Preencha o campo: ${field.name}`, 'error');
-                    return false;
-                }
-            }
+            // for (const field of requiredFields) {
+            //     const value = document.getElementById(field.id).value.trim();
+            //     if (!value) {
+            //         showNotification(`Preencha o campo: ${field.name}`, 'error');
+            //         return false;
+            //     }
+            // }
 
-            if (accessKeys.length === 0) {
-                showNotification('Adicione pelo menos uma chave de acesso', 'error');
-                return false;
-            }
+            // if (accessKeys.length === 0) {
+            //     showNotification('Adicione pelo menos uma chave de acesso', 'error');
+            //     return false;
+            // }
 
             return true;
         }

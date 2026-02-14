@@ -8,11 +8,11 @@ let general_config = {
         name: '',
     },
     destination: {
-        cpf_cnpj: '',
-        razao_social: '',
-        cep: '',
-        insc_estadual: '',
-        numero: ''
+        cpf_cnpj: '25300859000147',
+        razao_social: 'yes',
+        cep: '70070-120',
+        insc_estadual: 'yes',
+        numero: '123'
     },
     note_fiscal: {
         destination: "",
@@ -70,6 +70,38 @@ function requestPermission(action: string): Promise<boolean> {
     });
 }
 
+async function checkLoadingAndWait(page: any) {
+    console.log("🔍 Vigiando loading...");
+    const selector = '.load.jqmOverlay';
+
+    while (true) {
+        // O evaluate funciona em Playwright e Puppeteer
+        const isVisible = await page.evaluate((sel: string) => {
+            const el = document.querySelector(sel) as HTMLElement;
+            if (!el) return false; // Se não existe, não está visível
+
+            // Verifica se o display é diferente de 'none' e se está visível no layout
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        }, selector);
+
+        if (!isVisible) {
+            console.log("✅ Tela liberada! Prosseguindo...");
+            return true;
+        }
+
+        console.log("⏳ Loading detectado no estilo... aguardando 500ms");
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+}
+
+// Função global para verificar loading em qualquer parte do código
+async function waitForLoadingComplete(page: any) {
+    console.log("⏳ Aguardando loading completar...");
+    await checkLoadingAndWait(page);
+    console.log("🚀 Loading completado! Continuando...");
+}
+
 const creations = {
     "create_driver": async () => {
         const { cpf, name } = general_config.driver;
@@ -108,38 +140,41 @@ const creations = {
             timeout: 30000
         });
 
+        await waitForLoadingComplete(page);
+
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
         await page.waitForSelector(filterSelector, { visible: true });
 
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
         await page.type(filterSelector, cpf_cnpj);
+        await waitForLoadingComplete(page);
 
-        await page.waitForNetworkIdle({ idleTime: 500 });
+        await page.waitForNetworkIdle({ idleTime: 1000 });
 
         const isEmpty = await page.evaluate(() => {
             const grid = document.querySelector('.dx-datagrid-nodata');
             const rows = document.querySelectorAll('.dx-datagrid-table tbody tr.dx-data-row');
             return !!grid || rows.length === 0;
         });
+        await waitForLoadingComplete(page);
 
         if (isEmpty) {
             await page.click("egs-button-new button");
-            await timer();
             clearAndType("cpfCnpj", cpf_cnpj);
-            await timer();
-            console.log(cpf_cnpj.length)
-            if (cpf_cnpj.length === 14) {
-                await page.waitForSelector("span[id='butonConsultaCpfCnpj']", { state: 'visible' });
-                await timer();
-                await page.click("span[id='butonConsultaCpfCnpj']");
-            } else {
-                await timer()
-                const selector = 'input[ui-br-cep-mask]';
 
+            await waitForLoadingComplete(page);
+            if (cpf_cnpj.length === 14) {
+                const submitButton = '#butonConsultaCpfCnpj';
+                await page.waitForSelector(submitButton, { state: 'visible' });
+                await page.click(submitButton);
+            }
+            else {
+                const selector = 'input[ui-br-cep-mask]';
                 await page.locator(selector).fill(cep);
-                await timer()
+                await waitForLoadingComplete(page);
                 await page.click("#buttonCep");
+                await waitForLoadingComplete(page);
 
                 const numeroSelector = 'input[placeholder="Ex.: 000"]';
 
@@ -150,6 +185,7 @@ const creations = {
             clearAndType("inscEstadual", insc_estadual);
 
         }
+        return
     },
     "create_cte": async () => {
         await page.goto("https://app.egssistemas.com.br/cte-emissao", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -276,13 +312,16 @@ const creations = {
     "login": async () => {
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
+        const isLoading = await checkLoadingAndWait(page);
+        if (isLoading) {
+            console.log("✅ Loading parou! Continuando execução...");
+        }
         const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
 
         if (hasCaptcha) {
             console.log("Verificação de robô detectada! Aguardando você resolver...");
         }
 
-        await timer()
 
         await page.waitForSelector('input[name="login"]', { timeout: 10000 });
 
@@ -292,10 +331,9 @@ const creations = {
 
         await clearAndType('chaveAcesso', "50201");
 
-        const submitButton = await page.$('button[type="submit"]');
-        if (submitButton) {
-            await submitButton.click();
-        }
+        const submitButton = 'button[type="submit"]';
+        await page.waitForSelector(submitButton, { state: 'visible' });
+        await page.click(submitButton);
 
     },
     "complete_route": async () => {
@@ -441,7 +479,7 @@ function createControlServer() {
 }
 
 async function openControlWindow() {
-    const controlBrowser = await puppeteer.launch({
+    const launchOptions: any = {
         headless: false,
         defaultViewport: null,
         args: [
@@ -450,7 +488,10 @@ async function openControlWindow() {
             "--window-size=maximized",
             "--disable-features=DefaultBrowserSecurityFeatures"
         ]
-    });
+    };
+
+
+    const controlBrowser = await puppeteer.launch(launchOptions);
 
     controlPage = await controlBrowser.newPage();
     await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
