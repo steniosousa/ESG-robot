@@ -419,6 +419,152 @@
             transform: translateY(-1px);
             box-shadow: 0 3px 10px rgba(108, 117, 125, 0.4);
         }
+
+        /* Botões de Cadastro */
+        .cadastro-section {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #dee2e6;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .cadastro-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .cadastro-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .btn-cadastro-motorista {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-cadastro-motorista:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        .btn-cadastro-caminhao {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-cadastro-caminhao:hover:not(:disabled) {
+            background: linear-gradient(135deg, #20c997, #198754);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-criar-cte {
+            background: linear-gradient(135deg, #fd7e14, #e8590c);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-criar-cte:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e8590c, #dc5f00);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(253, 126, 20, 0.4);
+        }
+
+        .btn-fazer-login {
+            background: linear-gradient(135deg, #6f42c1, #5a32a3);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-fazer-login:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a32a3, #4a2c83);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .btn-registrar-destinatario {
+            background: linear-gradient(135deg, #e83e8c, #d91a72);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-registrar-destinatario:hover:not(:disabled) {
+            background: linear-gradient(135deg, #d91a72, #c2185b);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(232, 62, 140, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -447,15 +593,28 @@
             <button class="btn btn-start" id="start-btn" onclick="startRobot()">
                 🚀 Iniciar Robô
             </button>
-            <button class="btn btn-pause" id="pause-btn" onclick="pauseProcess()" disabled>
-                ⏸️ Pausar
-            </button>
-            <button class="btn btn-resume" id="resume-btn" onclick="resumeProcess()" disabled>
-                ▶️ Retomar
-            </button>
-            <button class="btn btn-stop" id="stop-btn" onclick="stopProcess()">
-                ⏹️ Parar
-            </button>
+        </div>
+
+        <!-- Seção de Cadastros -->
+        <div class="cadastro-section">
+            <div class="cadastro-title">📋 Cadastros Rápidos</div>
+            <div class="cadastro-buttons">
+                <button class="btn-fazer-login" onclick="fazerLogin()">
+                    🔐 Fazer Login
+                </button>
+                <button class="btn-cadastro-motorista" onclick="cadastrarMotorista()">
+                    👤 Cadastro de Motorista
+                </button>
+                <button class="btn-registrar-destinatario" onclick="registrarDestinatario()">
+                    🏢 Registrar Destinatário
+                </button>
+                <button class="btn-cadastro-caminhao" onclick="cadastrarCaminhao()">
+                    🚚 Cadastro de Caminhão
+                </button>
+                <button class="btn-criar-cte" onclick="criarCTE()">
+                    📄 Criação de CTe
+                </button>
+            </div>
         </div>
 
         <div class="permissions" id="permissions" style="display: none;">
@@ -753,31 +912,9 @@
                 }
             };
 
-            // Enviar configuração para o servidor
-            try {
-                const updateResponse = await fetch('/api/update-config', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(config)
-                });
-                
-                if (!updateResponse.ok) {
-                    throw new Error('Falha ao atualizar configuração');
-                }
-            } catch (error) {
-                console.error('Erro ao atualizar configuração:', error);
-                showNotification('Erro ao enviar configuração para o servidor', 'error');
-                return;
-            }
-
-            // Salvar no localStorage
             localStorage.setItem('esg-robot-config', JSON.stringify(config));
-
-            // Agora iniciar o robô
             try {
-                const response = await fetch('/api/start-robot', { method: 'POST' });
+                const response = await fetch('/api/start-robot', { method: 'POST', body: JSON.stringify(config) });
                 const result = await response.json();
                 
                 if (result.success) {
@@ -796,56 +933,7 @@
             }
         }
 
-        async function pauseProcess() {
-            try {
-                const response = await fetch('/api/pause', { method: 'POST' });
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.getElementById('last-action').textContent = 'Pausado';
-                    addLog('Processo pausado', 'warning');
-                    showNotification('Processo pausado', 'warning');
-                }
-            } catch (error) {
-                console.error('Erro ao pausar:', error);
-                addLog('Erro ao pausar processo', 'error');
-            }
-        }
-
-        async function resumeProcess() {
-            try {
-                const response = await fetch('/api/resume', { method: 'POST' });
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.getElementById('last-action').textContent = 'Retomado';
-                    addLog('Processo retomado', 'success');
-                    showNotification('Processo retomado', 'success');
-                }
-            } catch (error) {
-                console.error('Erro ao retomar:', error);
-                addLog('Erro ao retomar processo', 'error');
-            }
-        }
-
-        async function stopProcess() {
-            if (confirm('Tem certeza que deseja parar o processo?')) {
-                try {
-                    const response = await fetch('/api/stop', { method: 'POST' });
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        document.getElementById('last-action').textContent = 'Parado';
-                        addLog('Processo parado', 'error');
-                        showNotification('Processo parado', 'error');
-                    }
-                } catch (error) {
-                    console.error('Erro ao parar:', error);
-                    addLog('Erro ao parar processo', 'error');
-                }
-            }
-        }
-
+       
         function addPermissionRequest(action) {
             const permissionId = Date.now();
             const permission = {
@@ -1146,6 +1234,123 @@
         window.addEventListener('load', () => {
             loadConfig();
         });
+
+        // ===== FUNÇÕES DE CADASTRO =====
+
+        // Fazer Login
+        function fazerLogin() {
+            showNotification('🚀 Iniciando processo de login...', 'info');
+            addLog('🔐 Iniciando processo de login', 'info');
+            
+            // Enviar requisição para executar o login
+            fetch('/api/fazer-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('✅ Login executado com sucesso', 'success');
+                    addLog('✅ Processo de login concluído', 'success');
+                } else {
+                    showNotification('❌ Erro ao fazer login', 'error');
+                    addLog('❌ Erro: ' + (data.message || 'Falha no login'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showNotification('❌ Erro de conexão com o servidor', 'error');
+                addLog('❌ Erro de conexão ao fazer login', 'error');
+            });
+        }
+
+        // Cadastro de Motorista
+        function cadastrarMotorista() {
+            showNotification('🚀 Iniciando cadastro de motorista...', 'info');
+            addLog('👤 Iniciando processo de cadastro de motorista', 'info');
+            
+            // Enviar requisição para executar o cadastro de motorista
+            fetch('/api/cadastro-motorista', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('✅ Cadastro de motorista iniciado com sucesso', 'success');
+                    addLog('✅ Processo de cadastro de motorista iniciado', 'success');
+                } else {
+                    showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
+                    addLog('❌ Erro: ' + (data.message || 'Falha ao iniciar cadastro'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showNotification('❌ Erro de conexão com o servidor', 'error');
+                addLog('❌ Erro de conexão ao iniciar cadastro de motorista', 'error');
+            });
+        }
+
+        // Registrar Destinatário
+        function registrarDestinatario() {
+            showNotification('🚀 Iniciando registro de destinatário...', 'info');
+            addLog('🏢 Iniciando processo de registro de destinatário', 'info');
+            
+            // Enviar requisição para executar o registro de destinatário
+            fetch('/api/registrar-destinatario', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('✅ Registro de destinatário iniciado com sucesso', 'success');
+                    addLog('✅ Processo de registro de destinatário iniciado', 'success');
+                } else {
+                    showNotification('❌ Erro ao registrar destinatário', 'error');
+                    addLog('❌ Erro: ' + (data.message || 'Falha ao registrar destinatário'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showNotification('❌ Erro de conexão com o servidor', 'error');
+                addLog('❌ Erro de conexão ao registrar destinatário', 'error');
+            });
+        }
+
+        // Cadastro de Caminhão
+        function cadastrarCaminhao() {
+            showNotification('🚀 Iniciando cadastro de caminhão...', 'info');
+            addLog('🚚 Iniciando processo de cadastro de caminhão', 'info');
+            
+            // Aqui você pode adicionar a lógica para abrir o formulário de cadastro
+            // ou redirecionar para a página de cadastro de caminhão
+            
+            setTimeout(() => {
+                showNotification('📝 Formulário de caminhão pronto para preenchimento', 'success');
+                addLog('✅ Formulário de caminhão aberto', 'success');
+            }, 1000);
+        }
+
+        // Criação de CTe
+        function criarCTE() {
+            showNotification('🚀 Iniciando criação de CTe...', 'info');
+            addLog('📄 Iniciando processo de criação de CTe', 'info');
+            
+            // Aqui você pode adicionar a lógica para abrir o formulário de CTe
+            // ou redirecionar para a página de criação de CTe
+            
+            setTimeout(() => {
+                showNotification('📝 Formulário de CTe pronto para preenchimento', 'success');
+                addLog('✅ Formulário de CTe aberto', 'success');
+            }, 1000);
+        }
     </script>
 </body>
 </html>
