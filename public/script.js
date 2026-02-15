@@ -18,7 +18,6 @@ const config = {
         bairro: document.getElementById('dest_bairro').value
     },
     note_fiscal: {
-        destination: document.getElementById('note_fiscal_destination').value,
         load_value: document.getElementById('note_fiscal_load_value').value,
         quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
         load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
@@ -311,7 +310,6 @@ function validateConfig(type) {
             { id: 'dest_cep', name: 'CEP do destinatário' },
             { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
             { id: 'dest_numero', name: 'Número do destinatário' },
-            { id: 'note_fiscal_destination', name: 'Destino' },
             { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
             { id: 'note_fiscal_quantity', name: 'Quantidade' },
             { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
@@ -483,7 +481,6 @@ function criarCTE() {
             bairro: document.getElementById('dest_bairro').value
         },
         note_fiscal: {
-            destination: document.getElementById('note_fiscal_destination').value,
             load_value: document.getElementById('note_fiscal_load_value').value,
             quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
             load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),

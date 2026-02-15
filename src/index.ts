@@ -17,7 +17,6 @@ let general_config = {
         bairro: ''
     },
     note_fiscal: {
-        destination: "",
         load_value: "",
         quantity: '',
         load_service: '',
@@ -275,7 +274,6 @@ const creations = {
         }
     },
     "create_cte": async () => {
-
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
         await waitForGlobalLoading();
 
@@ -287,7 +285,7 @@ const creations = {
 
         await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
 
-        await clearAndSelectOption('destinatario', general_config.note_fiscal.destination);
+        await clearAndSelectOption('destinatario', general_config.destination.cpf_cnpj);
 
         await clearAndType('valorCarga', general_config.note_fiscal.load_value);
 
@@ -343,8 +341,6 @@ const creations = {
             await page.click('egs-button-save-popup button')
             await timer()
         }
-
-        await timer()
 
         //emissao
         await page.click('li[id="emissao"]');
