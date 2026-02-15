@@ -81,11 +81,9 @@ async function checkLoadingAndWait(page: any) {
         }, selector);
 
         if (!isVisible) {
-            console.log("✅ Tela liberada! Prosseguindo...");
             return true;
         }
 
-        console.log("⏳ Loading detectado no estilo... aguardando 500ms");
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 }
@@ -96,6 +94,15 @@ async function waitForLoadingComplete(page: any) {
     console.log("🚀 Loading completado! Continuando...");
 }
 
+async function listerRequest(includes: string) {
+    console.log("esperando resultado da requisição...")
+    const responsePromise = page.waitForResponse((res: any) => {
+        const matchesUrl = res.url().includes(`${includes}`);
+        const isNotPreflight = res.request().method() !== 'OPTIONS';
+        return matchesUrl && isNotPreflight;
+    }, { timeout: 5000 });
+    return responsePromise;
+}
 const creations = {
     "create_driver": async () => {
         const { cpf, name } = general_config.driver;
@@ -104,26 +111,25 @@ const creations = {
             waitUntil: "networkidle2",
             timeout: 30000
         });
+        await timer()
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula"]';
         await page.waitForSelector(filterSelector, { visible: true });
-
+        await page.focus(filterSelector);
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-        await page.type(filterSelector, cpf);
 
-        await page.waitForNetworkIdle({ idleTime: 500 });
+        await page.locator(filterSelector).fill(cpf);
+        const responsePromise = await listerRequest('/odata/Gcadastro');
+        await page.keyboard.press('Enter');
 
-        const isEmpty = await page.evaluate(() => {
-            const grid = document.querySelector('.dx-datagrid-nodata');
-            const rows = document.querySelectorAll('.dx-datagrid-table tbody tr.dx-data-row');
-            return !!grid || rows.length === 0;
-        });
-
-        if (isEmpty) {
+        const response = await responsePromise;
+        const responseData = await response.json();
+        await timer()
+        if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
-            clearAndType("cpfCnpj", cpf);
-            clearAndType("RAZAOSOCIAL", name);
+            await clearAndType("cpfCnpj", cpf);
+            await clearAndType("RAZAOSOCIAL", name);
         }
     },
     "create_destination": async () => {
@@ -134,35 +140,41 @@ const creations = {
             timeout: 30000
         });
 
-        await waitForLoadingComplete(page);
+        await timer()
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
         await page.waitForSelector(filterSelector, { visible: true });
 
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-        await page.type(filterSelector, cpf_cnpj, { delay: 50 });
-        await waitForLoadingComplete(page);
+        await timer()
+        await page.locator(filterSelector).fill(cpf_cnpj);
 
-        await page.waitForNetworkIdle({ idleTime: 1000 });
-
-        const isEmpty = await page.evaluate(() => {
-            const grid = document.querySelector('.dx-datagrid-nodata');
-            const rows = document.querySelectorAll('.dx-datagrid-table tbody tr.dx-data-row');
-            return !!grid || rows.length === 0;
-        });
-        await waitForLoadingComplete(page);
-
-        if (isEmpty) {
+        const responsePromise = await listerRequest('/odata/Gcadastro');
+        const response = await responsePromise;
+        const responseData = await response.json();
+        if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
             clearAndType("cpfCnpj", cpf_cnpj);
 
             await waitForLoadingComplete(page);
-            if (cpf_cnpj.length === 14) {
+            if (cpf_cnpj.length === 18) {
                 const submitButton = '#butonConsultaCpfCnpj';
                 await page.waitForSelector(submitButton, { state: 'visible' });
                 await page.click(submitButton);
+                await listerRequest('GetCadastroReceiraFederal')
+                await checkLoadingAndWait(page);
                 clearAndType("inscEstadual", insc_estadual);
+
+                await timer();
+                await clearAndTypeByPlaceholder("Informe o endereço", "rua nova");
+                await clearAndTypeByPlaceholder("Informe o bairro", "bairro novo");
+                await timer();
+                await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
+                await page.click("li[id=dadosAdicionais]");
+                await waitForLoadingComplete(page);
+                await clearAndSelectOption('contribuinteIcms', "1")
+                await clearAndSelectOption('consumidorFinal', "0")
             }
             else {
                 const selector = 'input[ui-br-cep-mask]';
@@ -170,22 +182,14 @@ const creations = {
                 await waitForLoadingComplete(page);
                 await page.click("#buttonCep");
                 await waitForLoadingComplete(page);
-                console.log("⏳ Aguardando request do CEP completar...");
-                await page.waitForResponse((response: any) =>
-                    response.url().includes('GetCEP') && response.status() === 200
-                    , { timeout: 10000 });
-                console.log("✅ Request do CEP completada!");
-
-                await timer();
-                await waitForLoadingComplete(page);
-
-                const numeroSelector = 'input[placeholder="Ex.: 000"]';
-
-                await page.waitForSelector(numeroSelector, { state: 'visible' });
-                await page.locator(numeroSelector).fill(numero);
-
+                await listerRequest("GetCEP")
                 await waitForLoadingComplete(page);
                 clearAndType("INSCESTADUAL", insc_estadual);
+                await waitForLoadingComplete(page);
+                await timer();
+                await clearAndTypeByPlaceholder("Ex.: 000", numero);
+                await clearAndTypeByPlaceholder("Informe o endereço", "rua nova");
+                await clearAndTypeByPlaceholder("Informe o bairro", "bairro novo");
                 await timer();
                 await page.waitForSelector("input[name='INSCESTADUAL']", { timeout: 10000 });
 
@@ -195,18 +199,27 @@ const creations = {
                 });
 
                 if (valorInscricao !== insc_estadual) {
-                    await page.type('input[name="INSCESTADUAL"]', insc_estadual);
+                    await page.locator('input[name="INSCESTADUAL"]').fill(insc_estadual);
                     await timer();
                 } else {
                     console.log(`✅ Campo INSCESTADUAL preenchido corretamente: ${valorInscricao}`);
                 }
 
                 clearAndType("RAZAOSOCIAL", razao_social);
+
+                await timer();
+                await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
+                await page.click("li[id=dadosAdicionais]");
+                await waitForLoadingComplete(page);
+                await clearAndSelectOption('contribuinteIcms', "1")
+                await clearAndSelectOption('consumidorFinal', "0")
             }
 
 
+
+
+
         }
-        return
     },
     "create_cte": async () => {
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -271,7 +284,7 @@ const creations = {
             await page.click('egs-button-new')
             await timer()
             await page.waitForSelector('input[name="CHAVENFE"]', { timeout: 20000 });
-            await page.type('input[name="CHAVENFE"]', key)
+            await page.locator('input[name="CHAVENFE"]').fill(key)
             await page.waitForSelector('egs-button-save-popup button', { timeout: 20000 });
             await page.click('egs-button-save-popup button')
             await timer()
@@ -547,6 +560,20 @@ async function openControlWindow() {
     return controlBrowser;
 }
 
+async function clearAndTypeByPlaceholder(placeholder: string, value: string) {
+    const selector = `input[placeholder="${placeholder}"]`;
+    await page.waitForSelector(selector, { visible: true });
+
+    await page.focus(selector);
+    await page.click(selector, { clickCount: 3 });
+    await page.keyboard.press('Backspace');
+
+    await page.waitForSelector(selector, { timeout: 1000 });
+    await page.locator(selector).fill(value);
+
+
+}
+
 async function clearAndType(name: string, value: string) {
     const selector = `input[name="${name}"]`;
     await page.waitForSelector(selector, { visible: true });
@@ -556,9 +583,7 @@ async function clearAndType(name: string, value: string) {
     await page.keyboard.press('Backspace');
 
     await page.waitForSelector(selector, { timeout: 1000 });
-    await page.type(selector, value);
-    await timer();
-
+    await page.locator(selector).fill(value);
 }
 
 const timer = async () => {
@@ -579,16 +604,28 @@ async function clearAndSelectOption(name: string, value: string) {
     if (name === 'finalidadeCte') {
         wrapper = `egs-cte-finalidade[name="${name}"]`;
     }
-    await page.evaluate((wrapper: any) => {
-        const el = document.querySelector(wrapper);
-        const btn = el?.querySelector('span#closeBtn');
-        btn?.click();
-    }, wrapper);
 
-    if (name !== 'finalidadeCte') {
+    if (name === 'contribuinteIcms') {
+        wrapper = `egs-nfe-contribuinte-icms[name="${name}"]`
+    }
+
+    if (name === 'consumidorFinal') {
+        wrapper = `egs-nfe-ind-final[name="${name}"]`
+    }
+
+    if (name !== 'contribuinteIcms' && name !== 'consumidorFinal') {
+        await page.evaluate((wrapper: any) => {
+            const el = document.querySelector(wrapper);
+            const btn = el?.querySelector('span#closeBtn');
+            btn?.click();
+        }, wrapper);
+    }
+
+
+    if (name !== 'finalidadeCte' && name !== 'contribuinteIcms' && name !== 'consumidorFinal') {
         const selector = `${wrapper} input.editComboboxPdr`;
-        await page.type(selector, value);
-        await timer();
+        await page.locator(selector).fill(value);
+
     } else {
         const selector = `${wrapper} input[type="text"]`;
 
@@ -597,9 +634,9 @@ async function clearAndSelectOption(name: string, value: string) {
         await page.click(selector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
 
-        await page.type(selector, value);
-        await timer();
+        await page.locator(selector).fill(value);
     }
+
     if (name === 'IDVEICULO') {
         await page.waitForSelector('egs-gveiculo #egs-select ul.keydownRows', {
             visible: true
@@ -622,15 +659,17 @@ async function clearAndSelectOption(name: string, value: string) {
             visible: true
         });
         await page.click('egs-cte-finalidade #egs-select ul.keydownRows:first-of-type');
+    } else if (name === "consumidorFinal") {
+        await page.waitForSelector('egs-nfe-ind-final #egs-select ul.keydownRows', {
+            visible: true
+        });
+        await page.click('egs-nfe-ind-final #egs-select ul.keydownRows:first-of-type');
     }
-
-
     else {
         await page.waitForFunction(() => {
             return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
         });
 
-        // 5. Clicar na PRIMEIRA opção
         await page.evaluate(() => {
             const first = document.querySelector('#egs-select ul.keydownRows') as HTMLElement;
             first?.scrollIntoView({ block: 'center' });
