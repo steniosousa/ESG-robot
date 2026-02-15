@@ -125,9 +125,8 @@ function addPermissionRequest(action, timestamp = Date.now()) {
     showNotification(`Solicitação: ${action}`, 'info');
 }
 
-
 async function startAgent() {
-    if (!validateConfig()) {
+    if (!validateConfig("driver")) {
         return;
     }
 
@@ -148,7 +147,6 @@ async function startAgent() {
         showNotification('Erro ao iniciar agente', 'error');
     }
 }
-
 
 async function startRobot() {
     if (!validateConfig()) {
@@ -349,30 +347,74 @@ document.addEventListener('DOMContentLoaded', function () {
     updateKeysList();
 });
 
-function validateConfig() {
-    const requiredFields = [
-        { id: 'driver_cpf', name: 'CPF Motorista' },
-        { id: 'driver_name', name: 'Nome do Motorista' },
-        { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
-        { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
-        { id: 'dest_cep', name: 'CEP do destinatário' },
-        { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
-        { id: 'dest_numero', name: 'Número do destinatário' },
-        { id: 'note_fiscal_destination', name: 'Destino' },
-        { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
-        { id: 'note_fiscal_quantity', name: 'Quantidade' },
-        { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
-        { id: 'note_fiscal_type', name: 'Tipo de Carga' },
-        { id: 'vehicle', name: 'Veículo' },
-        { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
-        { id: 'valor_icms', name: 'Valor ICMS' },
-        { id: 'v_cbs', name: 'Valor CBSe' },
-        { id: 'v_bc', name: 'Valor do IBS' },
-        { id: 'v_ibs', name: 'Valor IBS' }
-    ];
+function validateConfig(type) {
+    let requiredFields = [];
+
+    // Definir campos por tipo
+    if (type === "driver") {
+        requiredFields = [
+            { id: 'driver_cpf', name: 'CPF Motorista' },
+            { id: 'driver_name', name: 'Nome do Motorista' }
+        ];
+    } else if (type === "destination") {
+        requiredFields = [
+            { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
+            { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
+            { id: 'dest_cep', name: 'CEP do destinatário' },
+            { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
+            { id: 'dest_numero', name: 'Número do destinatário' }
+        ];
+    } else if (type === "vehicle") {
+        requiredFields = [
+            { id: 'vehicle', name: 'Veículo' },
+            { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
+            { id: 'valor_icms', name: 'Valor ICMS' }
+        ];
+    } else if (type === "note") {
+        requiredFields = [
+            { id: 'note_fiscal_destination', name: 'Destino' },
+            { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
+            { id: 'note_fiscal_quantity', name: 'Quantidade' },
+            { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
+            { id: 'note_fiscal_type', name: 'Tipo de Carga' }
+        ];
+    } else if (type === "tax") {
+        requiredFields = [
+            { id: 'v_cbs', name: 'Valor CBSe' },
+            { id: 'v_bc', name: 'Valor do IBS' },
+            { id: 'v_ibs', name: 'Valor IBS' }
+        ];
+    } else {
+        // Validação completa (tipo não especificado)
+        requiredFields = [
+            { id: 'driver_cpf', name: 'CPF Motorista' },
+            { id: 'driver_name', name: 'Nome do Motorista' },
+            { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
+            { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
+            { id: 'dest_cep', name: 'CEP do destinatário' },
+            { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
+            { id: 'dest_numero', name: 'Número do destinatário' },
+            { id: 'note_fiscal_destination', name: 'Destino' },
+            { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
+            { id: 'note_fiscal_quantity', name: 'Quantidade' },
+            { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
+            { id: 'note_fiscal_type', name: 'Tipo de Carga' },
+            { id: 'vehicle', name: 'Veículo' },
+            { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
+            { id: 'valor_icms', name: 'Valor ICMS' },
+            { id: 'v_cbs', name: 'Valor CBSe' },
+            { id: 'v_bc', name: 'Valor do IBS' },
+            { id: 'v_ibs', name: 'Valor IBS' }
+        ];
+    }
 
     for (const field of requiredFields) {
-        const value = document.getElementById(field.id).value.trim();
+        const element = document.getElementById(field.id);
+        if (!element) {
+            console.warn(`Elemento não encontrado: ${field.id}`);
+            continue;
+        }
+        const value = element.value.trim();
         if (!value) {
             showNotification(`Preencha o campo: ${field.name}`, 'error');
             return false;
@@ -425,10 +467,13 @@ function fazerLogin() {
 
 // Cadastro de Motorista
 function cadastrarMotorista() {
+    if (!validateConfig("driver")) {
+        return;
+    }
+
     showNotification('🚀 Iniciando cadastro de motorista...', 'info');
     addLog('👤 Iniciando processo de cadastro de motorista', 'info');
 
-    // Enviar requisição para executar o cadastro de motorista
     fetch('/api/cadastro-motorista', {
         method: 'POST',
         headers: {
@@ -454,6 +499,10 @@ function cadastrarMotorista() {
 
 // Registrar Destinatário
 function registrarDestinatario() {
+    if (!validateConfig("destination")) {
+        return;
+    }
+
     showNotification('🚀 Iniciando registro de destinatário...', 'info');
     addLog('🏢 Iniciando processo de registro de destinatário', 'info');
 
@@ -496,8 +545,9 @@ function cadastrarCaminhao() {
 
 // Criação de CTe
 function criarCTE() {
-    showNotification('🚀 Iniciando criação de CTe...', 'info');
-    addLog('📄 Iniciando processo de criação de CTe', 'info');
+    if (!validateConfig("note")) {
+        return;
+    }
     fetch('/api/create-cte', {
         method: 'POST',
         headers: {
