@@ -8,19 +8,19 @@ let general_config = {
         name: '',
     },
     destination: {
-        cpf_cnpj: '25300859000147',
-        razao_social: 'Empresa Teste LTDA',
-        cep: '70070-120',
-        insc_estadual: 'cafe',
-        numero: '123'
+        cpf_cnpj: '',
+        razao_social: '',
+        cep: '',
+        insc_estadual: '',
+        numero: ''
     },
     note_fiscal: {
         destination: "",
         load_value: "",
-        quantity: 0,
-        load_service: 0,
+        quantity: '',
+        load_service: '',
         type: "",
-        service_recipient: 0
+        service_recipient: ''
     },
     taxes: {
         vehicle: "",
@@ -31,7 +31,7 @@ let general_config = {
         access_key: []
     },
     emition: {
-        finality: "0"
+        finality: ""
     },
     tax_reform: {
         edit_ibs: true,
@@ -39,7 +39,7 @@ let general_config = {
         Valor_CBS: "",
         Valor_IBS_UF_IBS: ""
     },
-    timerDuration: 10
+    timerDuration: 2
 }
 
 let isPaused = false;
@@ -90,7 +90,6 @@ async function checkLoadingAndWait(page: any) {
     }
 }
 
-// Função global para verificar loading em qualquer parte do código
 async function waitForLoadingComplete(page: any) {
     console.log("⏳ Aguardando loading completar...");
     await checkLoadingAndWait(page);
@@ -532,11 +531,17 @@ async function openControlWindow() {
 
     const controlBrowser = await puppeteer.launch(launchOptions);
 
-    controlPage = await controlBrowser.newPage();
-    await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-    await controlPage.goto("http://localhost:3000");
+    const pages = await controlBrowser.pages();
+    if (pages.length > 0) {
+        controlPage = pages[0];
+        await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        await controlPage.goto("http://localhost:3000");
+    } else {
+        controlPage = await controlBrowser.newPage();
+        await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        await controlPage.goto("http://localhost:3000");
+    }
 
-    // Armazena o browser para ser usado pelo robô principal
     browser = controlBrowser;
 
     return controlBrowser;
@@ -645,7 +650,6 @@ async function main() {
         }
     }
 
-    // Usa o browser existente e cria uma nova aba
     page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 }
