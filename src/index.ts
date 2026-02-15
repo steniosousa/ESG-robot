@@ -9,9 +9,9 @@ let general_config = {
     },
     destination: {
         cpf_cnpj: '25300859000147',
-        razao_social: 'yes',
+        razao_social: 'Empresa Teste LTDA',
         cep: '70070-120',
-        insc_estadual: 'yes',
+        insc_estadual: 'cafe',
         numero: '123'
     },
     note_fiscal: {
@@ -53,20 +53,15 @@ let permissionRequests: Array<{ action: string; timestamp: number }> = [];
 let robotCanStart = false;
 
 function requestPermission(action: string): Promise<boolean> {
+    console.log(`🔔 [DEBUG] Criando solicitação de permissão para: ${action}`);
     return new Promise((resolve) => {
         pendingPermission = { action, resolve };
         permissionRequests.push({
             action,
             timestamp: Date.now()
         });
-
-        setTimeout(() => {
-            if (pendingPermission && pendingPermission.action === action) {
-                pendingPermission.resolve(false);
-                pendingPermission = null;
-                permissionRequests = permissionRequests.filter(req => req.action !== action);
-            }
-        }, 9000000);
+        console.log(`🔔 [DEBUG] Permissão adicionada ao array. Total: ${permissionRequests.length}`);
+        console.log(`🔔 [DEBUG] Array de permissões:`, permissionRequests);
     });
 }
 
@@ -147,7 +142,7 @@ const creations = {
 
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-        await page.type(filterSelector, cpf_cnpj);
+        await page.type(filterSelector, cpf_cnpj, { delay: 50 });
         await waitForLoadingComplete(page);
 
         await page.waitForNetworkIdle({ idleTime: 1000 });
@@ -168,6 +163,7 @@ const creations = {
                 const submitButton = '#butonConsultaCpfCnpj';
                 await page.waitForSelector(submitButton, { state: 'visible' });
                 await page.click(submitButton);
+                clearAndType("inscEstadual", insc_estadual);
             }
             else {
                 const selector = 'input[ui-br-cep-mask]';
@@ -175,20 +171,47 @@ const creations = {
                 await waitForLoadingComplete(page);
                 await page.click("#buttonCep");
                 await waitForLoadingComplete(page);
+                console.log("⏳ Aguardando request do CEP completar...");
+                await page.waitForResponse((response: any) =>
+                    response.url().includes('GetCEP') && response.status() === 200
+                    , { timeout: 10000 });
+                console.log("✅ Request do CEP completada!");
+
+                await timer();
+                await waitForLoadingComplete(page);
 
                 const numeroSelector = 'input[placeholder="Ex.: 000"]';
 
                 await page.waitForSelector(numeroSelector, { state: 'visible' });
                 await page.locator(numeroSelector).fill(numero);
+
+                await waitForLoadingComplete(page);
+                clearAndType("INSCESTADUAL", insc_estadual);
+                await timer();
+                await page.waitForSelector("input[name='INSCESTADUAL']", { timeout: 10000 });
+
+                const valorInscricao = await page.evaluate(() => {
+                    const input = document.querySelector('input[name="INSCESTADUAL"]') as HTMLInputElement;
+                    return input ? input.value : '';
+                });
+
+                if (valorInscricao !== insc_estadual) {
+                    await page.type('input[name="INSCESTADUAL"]', insc_estadual);
+                    await timer();
+                } else {
+                    console.log(`✅ Campo INSCESTADUAL preenchido corretamente: ${valorInscricao}`);
+                }
+
                 clearAndType("RAZAOSOCIAL", razao_social);
             }
-            clearAndType("inscEstadual", insc_estadual);
+
 
         }
         return
     },
     "create_cte": async () => {
-        await page.goto("https://app.egssistemas.com.br/cte-emissao", { waitUntil: "domcontentloaded", timeout: 30000 });
+        await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
+        await waitForLoadingComplete(page);
 
         const canClickCopy = await requestPermission("Clicar no botão copiar");
 
@@ -198,7 +221,6 @@ const creations = {
 
         await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
 
-        await clearAndSelectOption('destinatario', general_config.note_fiscal.destination);
         await clearAndSelectOption('destinatario', general_config.note_fiscal.destination);
 
         await clearAndType('valorCarga', general_config.note_fiscal.load_value);
@@ -213,6 +235,8 @@ const creations = {
         await clearAndType('valorReceber', general_config.note_fiscal.service_recipient.toString());
 
         await page.click('li[id="cteNormal"]');
+
+
 
         //page taxes
 
@@ -416,6 +440,21 @@ function createControlServer() {
         }
     });
 
+    app.post('/api/create-cte', async (req, res) => {
+        try {
+            await creations.create_cte();
+            console.log('✅ CTe criado com sucesso');
+            res.json({ success: true, message: 'CTe criado com sucesso' });
+
+        } catch (error) {
+            console.error('❌ Erro no registro de destinatário:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+            res.json({ success: false, message: errorMessage });
+        }
+    });
+
+
+
     // Endpoint para iniciar o robô
     app.post('/api/start-robot', async (req, res) => {
         const config = req.body;
@@ -511,8 +550,8 @@ async function clearAndType(name: string, value: string) {
     await page.click(selector, { clickCount: 3 });
     await page.keyboard.press('Backspace');
 
-    await page.waitForSelector(selector, { timeout: 10000 });
-    await page.locator(selector).fill(value);
+    await page.waitForSelector(selector, { timeout: 1000 });
+    await page.type(selector, value);
     await timer();
 
 }
@@ -524,51 +563,77 @@ const timer = async () => {
 };
 
 async function clearAndSelectOption(name: string, value: string) {
-    const wrappers: Record<string, string> = {
-        'IDVEICULO': `egs-gveiculo[name="${name}"]`,
-        'finalidadeCte': `egs-cte-finalidade[name="${name}"]`,
-        'DEFAULT': `egs-gcadastro[name="${name}"]`
-    };
+    await waitForLoadingComplete(page);
+    await timer();
 
-    const wrapperSelector = wrappers[name] || wrappers['DEFAULT'];
+    let wrapper =
+        name === 'IDVEICULO'
+            ? `egs-gveiculo[name="${name}"]` : `egs-gcadastro[name="${name}"]`;
 
-    await page.evaluate((selector: string) => {
-        const btn = document.querySelector(selector)?.querySelector('span#closeBtn');
-        (btn as HTMLElement)?.click();
-    }, wrapperSelector);
 
-    // 3. Identifica o input (seja ele qual for dentro do wrapper)
-    const inputSelector = `${wrapperSelector} input:not([type="hidden"])`;
-    await page.waitForSelector(inputSelector, { visible: true });
-
-    // Limpa e Digita (Usando o método de 3 cliques para garantir foco)
-    await page.click(inputSelector, { clickCount: 3 });
-    await page.keyboard.press('Backspace');
-    await page.type(inputSelector, value, { delay: 50 });
-
-    // 4. Aguarda a lista de resultados aparecer
-    // O seletor 'ul.keydownRows' parece ser o padrão do sistema EGS
-    const listOptionSelector = `${wrapperSelector} #egs-select ul.keydownRows, #egs-select ul.keydownRows`;
-
-    try {
-        await page.waitForSelector(listOptionSelector, { visible: true, timeout: 5000 });
-
-        // 5. Clica na primeira opção que aparecer
-        await page.evaluate((selector: string) => {
-            const firstOption = document.querySelector(selector) as HTMLElement;
-            if (firstOption) {
-                firstOption.scrollIntoView({ block: 'center' });
-                firstOption.click();
-            }
-        }, listOptionSelector);
-
-        // Aguarda um momento para o Angular processar a seleção
-        await page.waitForNetworkIdle({ idleTime: 100 });
-    } catch (e) {
-        console.error(`Erro ao selecionar opção para ${name}: Lista não apareceu.`);
+    if (name === 'finalidadeCte') {
+        wrapper = `egs-cte-finalidade[name="${name}"]`;
     }
-}
+    await page.evaluate((wrapper: any) => {
+        const el = document.querySelector(wrapper);
+        const btn = el?.querySelector('span#closeBtn');
+        btn?.click();
+    }, wrapper);
 
+    if (name !== 'finalidadeCte') {
+        const selector = `${wrapper} input.editComboboxPdr`;
+        await page.type(selector, value);
+        await timer();
+    } else {
+        const selector = `${wrapper} input[type="text"]`;
+
+        await page.waitForSelector(selector, { visible: true });
+
+        await page.click(selector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+
+        await page.type(selector, value);
+        await timer();
+    }
+    if (name === 'IDVEICULO') {
+        await page.waitForSelector('egs-gveiculo #egs-select ul.keydownRows', {
+            visible: true
+        });
+        await page.click('egs-gveiculo #egs-select ul.keydownRows:first-of-type');
+    } else if (name === 'IDMOTORISTA') {
+        const selectBase = 'egs-gcadastro[name="IDMOTORISTA"]';
+
+        await page.waitForSelector(
+            `${selectBase} #egs-select ul.keydownRows`,
+            { visible: true }
+        );
+
+        await page.click(
+            `${selectBase} #egs-select ul.keydownRows`
+        );
+
+    } else if (name === 'finalidadeCte') {
+        await page.waitForSelector('egs-cte-finalidade #egs-select ul.keydownRows', {
+            visible: true
+        });
+        await page.click('egs-cte-finalidade #egs-select ul.keydownRows:first-of-type');
+    }
+
+
+    else {
+        await page.waitForFunction(() => {
+            return document.querySelectorAll('#egs-select ul.keydownRows').length > 0;
+        });
+
+        // 5. Clicar na PRIMEIRA opção
+        await page.evaluate(() => {
+            const first = document.querySelector('#egs-select ul.keydownRows') as HTMLElement;
+            first?.scrollIntoView({ block: 'center' });
+            first?.click();
+        });
+    }
+
+}
 async function main() {
     createControlServer();
     openControlWindow();

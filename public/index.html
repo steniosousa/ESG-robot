@@ -847,6 +847,17 @@
             </div>
         </div>
 
+        <!-- Seção de Permissões -->
+        <div class="permissions" id="permissions" style="display: none;">
+            <div class="section-title">
+                <span class="section-icon">🔔</span>
+                Solicitações de Permissão
+            </div>
+            <div id="permissions-list">
+                <!-- Permissões serão adicionadas aqui dinamicamente -->
+            </div>
+        </div>
+
         <!-- Seção de Cadastros Rápidos -->
         <div class="section">
             <div class="section-title">
@@ -906,7 +917,7 @@
                 </div>
             </div>
 
-             <!-- Configurações de Destinatário -->
+            <!-- Configurações de Destinatário -->
             <div class="config-subsection">
                 <h3>🛻 Motorista</h3>
                 <div class="form-grid">
@@ -918,7 +929,7 @@
                         <label>Nome</label>
                         <input type="text" id="driver_name" placeholder="Digite o nome">
                     </div>
-                  
+
                 </div>
             </div>
 
@@ -1057,7 +1068,7 @@
         let knownPermissions = new Set();
         let pendingPermissions = [];
 
-        setInterval(updateStatus, 2000);
+        setInterval(updateStatus, 1000); // Reduzido para 1 segundo
 
         async function updateStatus() {
             try {
@@ -1142,7 +1153,9 @@
                     Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
                     Valor_CBS: document.getElementById('v_cbs').value,
                     Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
-                }
+                },
+                timerDuration: document.getElementById('timer_duration').value
+
             };
 
             try {
@@ -1174,11 +1187,11 @@
                     name: document.getElementById('driver_name').value
                 },
                 destination: {
-                    cpf_cnpj: '82462566023',
-                    razao_social:'yes',
-                    cep: '70070-120',
-                    insc_estadual: 'yes',
-                    numero: '123'
+                    cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+                    razao_social: document.getElementById('dest_razao_social').value,
+                    cep: document.getElementById('dest_cep').value,
+                    insc_estadual: document.getElementById('dest_insc_estadual').value,
+                    numero: document.getElementById('dest_numero').value
                 },
                 note_fiscal: {
                     destination: document.getElementById('note_fiscal_destination').value,
@@ -1203,8 +1216,11 @@
                     Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
                     Valor_CBS: document.getElementById('v_cbs').value,
                     Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
-                }
+                },
+                timerDuration: document.getElementById('timer_duration').value
             };
+
+
             try {
                 const response = await fetch('/api/start-robot', { method: 'POST', body: JSON.stringify(config), headers: { 'Content-Type': 'application/json' } });
                 const result = await response.json();
@@ -1476,7 +1492,9 @@
                     Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
                     Valor_CBS: document.getElementById('v_cbs').value,
                     Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
-                }
+                },
+                timerDuration: document.getElementById('timer_duration').value
+
             };
 
             showNotification('Configuração salva com sucesso!', 'success');
@@ -1545,7 +1563,6 @@
             showNotification('🚀 Iniciando registro de destinatário...', 'info');
             addLog('🏢 Iniciando processo de registro de destinatário', 'info');
 
-            // Enviar requisição para executar o registro de destinatário
             fetch('/api/registrar-destinatario', {
                 method: 'POST',
                 headers: {
@@ -1587,14 +1604,27 @@
         function criarCTE() {
             showNotification('🚀 Iniciando criação de CTe...', 'info');
             addLog('📄 Iniciando processo de criação de CTe', 'info');
-
-            // Aqui você pode adicionar a lógica para abrir o formulário de CTe
-            // ou redirecionar para a página de criação de CTe
-
-            setTimeout(() => {
-                showNotification('📝 Formulário de CTe pronto para preenchimento', 'success');
-                addLog('✅ Formulário de CTe aberto', 'success');
-            }, 1000);
+            fetch('/api/create-cte', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('✅ CTe criado com sucesso', 'success');
+                        addLog('✅ CTe criado com sucesso', 'success');
+                    } else {
+                        showNotification('❌ Erro ao criar CTe', 'error');
+                        addLog('❌ Erro: ' + (data.message || 'Falha ao criar CTe'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    showNotification('❌ Erro de conexão com o servidor', 'error');
+                    addLog('❌ Erro de conexão ao registrar destinatário', 'error');
+                });
         }
     </script>
 </body>
