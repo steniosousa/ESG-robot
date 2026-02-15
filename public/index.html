@@ -1043,7 +1043,7 @@
                 <h3>⏱️ Timer</h3>
                 <div class="form-group">
                     <label>Duração (segundos)</label>
-                    <input type="number" id="timer_duration" value="2" min="1" max="300">
+                    <input type="number" id="timer_duration" value="2" min="2" max="60">
                 </div>
             </div>
 
@@ -1113,7 +1113,6 @@
 
 
         async function startAgent() {
-            // Primeiro, salvar e enviar a configuração atual para o servidor
             if (!validateConfig()) {
                 return;
             }
@@ -1420,34 +1419,38 @@
 
         function validateConfig() {
             const requiredFields = [
-                { id: 'note_fiscal_destination', name: 'Destino' },
-                { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
-                { id: 'note_fiscal_quantity', name: 'Quantidade' },
-                { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
-                { id: 'note_fiscal_type', name: 'Tipo de Carga' },
+                { id: 'driver_cpf', name: 'CPF Motorista' },
+                { id: 'driver_name', name: 'Nome do Motorista' },
                 { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
                 { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
                 { id: 'dest_cep', name: 'CEP do destinatário' },
                 { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
                 { id: 'dest_numero', name: 'Número do destinatário' },
+                { id: 'note_fiscal_destination', name: 'Destino' },
+                { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
+                { id: 'note_fiscal_quantity', name: 'Quantidade' },
+                { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
+                { id: 'note_fiscal_type', name: 'Tipo de Carga' },
                 { id: 'vehicle', name: 'Veículo' },
-                { id: 'driver_cpf', name: 'CPF Motorista' },
                 { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
-                { id: 'valor_icms', name: 'Valor ICMS' }
+                { id: 'valor_icms', name: 'Valor ICMS' },
+                { id: 'v_cbs', name: 'Valor CBSe' },
+                { id: 'v_bc', name: 'Valor do IBS' },
+                { id: 'v_ibs', name: 'Valor IBS' }
             ];
 
-            // for (const field of requiredFields) {
-            //     const value = document.getElementById(field.id).value.trim();
-            //     if (!value) {
-            //         showNotification(`Preencha o campo: ${field.name}`, 'error');
-            //         return false;
-            //     }
-            // }
+            for (const field of requiredFields) {
+                const value = document.getElementById(field.id).value.trim();
+                if (!value) {
+                    showNotification(`Preencha o campo: ${field.name}`, 'error');
+                    return false;
+                }
+            }
 
-            // if (accessKeys.length === 0) {
-            //     showNotification('Adicione pelo menos uma chave de acesso', 'error');
-            //     return false;
-            // }
+            if (accessKeys.length === 0) {
+                showNotification('Adicione pelo menos uma chave de acesso', 'error');
+                return false;
+            }
 
             return true;
         }
