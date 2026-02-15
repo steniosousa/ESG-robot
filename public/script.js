@@ -125,54 +125,6 @@ function addPermissionRequest(action, timestamp = Date.now()) {
     showNotification(`Solicitação: ${action}`, 'info');
 }
 
-async function startAgent() {
-    if (!validateConfig("driver")) {
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/start-agente', { method: 'POST', body: JSON.stringify(config), headers: { 'Content-Type': 'application/json' } });
-        const result = await response.json();
-
-        if (result.success) {
-            addLog('🚀 Agente iniciado com sucesso', 'success');
-            showNotification('Agente iniciado', 'success');
-        } else {
-            addLog(`❌ Erro ao iniciar: ${result.message}`, 'error');
-            showNotification(result.message, 'error');
-        }
-    } catch (error) {
-        console.error('Erro ao iniciar agente:', error);
-        addLog('❌ Erro ao iniciar agente', 'error');
-        showNotification('Erro ao iniciar agente', 'error');
-    }
-}
-
-async function startRobot() {
-    if (!validateConfig()) {
-        return;
-    }
-
-
-
-    try {
-        const response = await fetch('/api/start-robot', { method: 'POST', body: JSON.stringify(config), headers: { 'Content-Type': 'application/json' } });
-        const result = await response.json();
-
-        if (result.success) {
-            addLog('🚀 Robô iniciado com sucesso', 'success');
-            showNotification('Robô iniciado', 'success');
-        } else {
-            addLog(`❌ Erro ao iniciar: ${result.message}`, 'error');
-            showNotification(result.message, 'error');
-        }
-    } catch (error) {
-        console.error('Erro ao iniciar robô:', error);
-        addLog('❌ Erro ao iniciar robô', 'error');
-        showNotification('Erro ao iniciar robô', 'error');
-    }
-}
-
 
 function addPermissionRequest(action) {
     const permissionId = Date.now();
@@ -370,20 +322,6 @@ function validateConfig(type) {
             { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
             { id: 'valor_icms', name: 'Valor ICMS' }
         ];
-    } else if (type === "note") {
-        requiredFields = [
-            { id: 'note_fiscal_destination', name: 'Destino' },
-            { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
-            { id: 'note_fiscal_quantity', name: 'Quantidade' },
-            { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
-            { id: 'note_fiscal_type', name: 'Tipo de Carga' }
-        ];
-    } else if (type === "tax") {
-        requiredFields = [
-            { id: 'v_cbs', name: 'Valor CBSe' },
-            { id: 'v_bc', name: 'Valor do IBS' },
-            { id: 'v_ibs', name: 'Valor IBS' }
-        ];
     } else {
         // Validação completa (tipo não especificado)
         requiredFields = [
@@ -421,7 +359,7 @@ function validateConfig(type) {
         }
     }
 
-    if (accessKeys.length === 0) {
+    if (type === "cte" && accessKeys.length === 0) {
         showNotification('Adicione pelo menos uma chave de acesso', 'error');
         return false;
     }
@@ -429,13 +367,6 @@ function validateConfig(type) {
     return true;
 }
 
-function saveConfig() {
-    if (!validateConfig()) {
-        return;
-    }
-
-    showNotification('Configuração salva com sucesso!', 'success');
-}
 
 function fazerLogin() {
     showNotification('🚀 Iniciando processo de login...', 'info');
@@ -474,17 +405,25 @@ function cadastrarMotorista() {
     showNotification('🚀 Iniciando cadastro de motorista...', 'info');
     addLog('👤 Iniciando processo de cadastro de motorista', 'info');
 
+    // Obter dados atuais do frontend
+    const driverData = {
+        cpf: document.getElementById('driver_cpf').value,
+        name: document.getElementById('driver_name').value
+    };
+
+    // Enviar requisição para executar o cadastro de motorista com os dados atuais
     fetch('/api/cadastro-motorista', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify(driverData)
     })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showNotification('✅ Cadastro de motorista iniciado com sucesso', 'success');
-                addLog('✅ Processo de cadastro de motorista iniciado', 'success');
+                showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
+                addLog('✅ Processo de cadastro de motorista concluído', 'success');
             } else {
                 showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
                 addLog('❌ Erro: ' + (data.message || 'Falha ao iniciar cadastro'), 'error');
@@ -506,17 +445,31 @@ function registrarDestinatario() {
     showNotification('🚀 Iniciando registro de destinatário...', 'info');
     addLog('🏢 Iniciando processo de registro de destinatário', 'info');
 
+    // Obter dados atuais do frontend
+    const destinationData = {
+        cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+        razao_social: document.getElementById('dest_razao_social').value,
+        cep: document.getElementById('dest_cep').value,
+        insc_estadual: document.getElementById('dest_insc_estadual').value,
+        numero: document.getElementById('dest_numero').value,
+        rua: document.getElementById('dest_rua').value,
+        bairro: document.getElementById('dest_bairro').value,
+        cidade: document.getElementById('dest_cidade').value
+    };
+
+    // Enviar requisição para executar o registro de destinatário com os dados atuais
     fetch('/api/registrar-destinatario', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify(destinationData)
     })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showNotification('✅ Registro de destinatário iniciado com sucesso', 'success');
-                addLog('✅ Processo de registro de destinatário iniciado', 'success');
+                showNotification('✅ Destinatário cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
+                addLog('✅ Processo de registro de destinatário concluído', 'success');
             } else {
                 showNotification('❌ Erro ao registrar destinatário', 'error');
                 addLog('❌ Erro: ' + (data.message || 'Falha ao registrar destinatário'), 'error');
@@ -538,35 +491,82 @@ function cadastrarCaminhao() {
     // ou redirecionar para a página de cadastro de caminhão
 
     setTimeout(() => {
-        showNotification('📝 Formulário de caminhão pronto para preenchimento', 'success');
-        addLog('✅ Formulário de caminhão aberto', 'success');
+        showNotification(' Formulário de caminhão pronto para preenchimento', 'success');
+        addLog(' Formulário de caminhão aberto', 'success');
     }, 1000);
 }
 
 // Criação de CTe
 function criarCTE() {
-    if (!validateConfig("note")) {
+    if (!validateConfig("cte")) {
         return;
     }
+
+    showNotification(' Iniciando criação de CTe...', 'info');
+    addLog(' Iniciando processo de criação de CTe', 'info');
+
+    const config = {
+        driver: {
+            cpf: document.getElementById('driver_cpf').value,
+            name: document.getElementById('driver_name').value
+        },
+        destination: {
+            cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+            razao_social: document.getElementById('dest_razao_social').value,
+            cep: document.getElementById('dest_cep').value,
+            insc_estadual: document.getElementById('dest_insc_estadual').value,
+            numero: document.getElementById('dest_numero').value,
+            rua: document.getElementById('dest_rua').value,
+            bairro: document.getElementById('dest_bairro').value
+        },
+        note_fiscal: {
+            destination: document.getElementById('note_fiscal_destination').value,
+            load_value: document.getElementById('note_fiscal_load_value').value,
+            quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
+            load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
+            service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value)
+        },
+        taxes: {
+            vehicle: document.getElementById('vehicle').value,
+            Valor_BC_ICMS: document.getElementById('valor_bc_icms').value,
+            Valor_ICMS: document.getElementById('valor_icms').value
+        },
+        docs: {
+            access_key: accessKeys
+        },
+        emition: {
+            finality: document.getElementById('finality').value
+        },
+        tax_reform: {
+            edit_ibs: document.getElementById('edit_ibs').value === 'true',
+            Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
+            Valor_CBS: document.getElementById('v_cbs').value,
+            Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
+        },
+        timerDuration: document.getElementById('timer_duration').value
+    };
+
+    // Enviar requisição para executar a criação de CTe com os dados atuais
     fetch('/api/create-cte', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify(config)
     })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showNotification('✅ CTe criado com sucesso', 'success');
-                addLog('✅ CTe criado com sucesso', 'success');
+                showNotification(' CTe criado com sucesso! Pode criar o próximo.', 'success');
+                addLog(' CTe criado com sucesso', 'success');
             } else {
-                showNotification('❌ Erro ao criar CTe', 'error');
-                addLog('❌ Erro: ' + (data.message || 'Falha ao criar CTe'), 'error');
+                showNotification(' Erro ao criar CTe', 'error');
+                addLog(' Erro: ' + (data.message || 'Falha ao criar CTe'), 'error');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
-            showNotification('❌ Erro de conexão com o servidor', 'error');
-            addLog('❌ Erro de conexão ao registrar destinatário', 'error');
+            showNotification(' Erro de conexão com o servidor', 'error');
+            addLog(' Erro de conexão ao criar CTe', 'error');
         });
 }

@@ -440,6 +440,11 @@ function createControlServer() {
             if (!robotCanStart) {
                 robotCanStart = true;
             }
+            const driverData = req.body;
+
+            general_config.driver.cpf = driverData.cpf;
+            general_config.driver.name = driverData.name;
+
             await timer()
             await creations.create_driver();
             res.json({ success: true, message: 'Cadastro de motorista executado com sucesso' });
@@ -457,6 +462,17 @@ function createControlServer() {
             if (!robotCanStart) {
                 robotCanStart = true;
             }
+            const destinationData = req.body;
+
+            general_config.destination.cpf_cnpj = destinationData.cpf_cnpj;
+            general_config.destination.razao_social = destinationData.razao_social;
+            general_config.destination.cep = destinationData.cep;
+            general_config.destination.insc_estadual = destinationData.insc_estadual;
+            general_config.destination.numero = destinationData.numero;
+            general_config.destination.rua = destinationData.rua;
+            general_config.destination.bairro = destinationData.bairro;
+
+
             await timer()
             await creations.create_destination();
             console.log('✅ Registro de destinatário executado com sucesso');
@@ -471,9 +487,12 @@ function createControlServer() {
 
     app.post('/api/create-cte', async (req, res) => {
         try {
-             if (!robotCanStart) {
+            if (!robotCanStart) {
                 robotCanStart = true;
             }
+
+            const cteData = req.body;
+            general_config = cteData;
             await timer()
             await creations.create_cte();
             console.log('✅ CTe criado com sucesso');
@@ -486,18 +505,6 @@ function createControlServer() {
         }
     });
 
-    // Endpoint para iniciar o robô
-    app.post('/api/start-agente', async (req, res) => {
-
-        if (!robotCanStart) {
-            robotCanStart = true;
-        }
-        await creations.login();
-        await creations.create_driver();
-        await creations.create_cte();
-
-        res.json({ success: true, message: 'Agente iniciando...' });
-    });
 
     app.get('/', (req, res) => {
         res.sendFile(path.join(__dirname, '../public/index.html'));
