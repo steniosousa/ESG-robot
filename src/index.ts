@@ -107,6 +107,7 @@ async function listerRequest(includes: string) {
 }
 const creations = {
     "create_driver": async () => {
+
         const { cpf, name } = general_config.driver;
 
         await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
@@ -135,6 +136,7 @@ const creations = {
         }
     },
     "create_destination": async () => {
+
         const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = general_config.destination;
 
         await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
@@ -224,6 +226,7 @@ const creations = {
         }
     },
     "create_cte": async () => {
+
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
         await waitForLoadingComplete(page);
 
@@ -348,6 +351,7 @@ const creations = {
         await clearAndType('vIBSUF', general_config.tax_reform.Valor_IBS_UF_IBS);
     },
     "login": async () => {
+
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
         const isLoading = await checkLoadingAndWait(page);
@@ -375,6 +379,7 @@ const creations = {
 
     },
     "complete_route": async () => {
+
         await creations.login()
         await creations.create_driver()
         await creations.create_destination()
@@ -416,10 +421,12 @@ function createControlServer() {
     // Endpoint para fazer login
     app.post('/api/fazer-login', async (req, res) => {
         try {
+            if (!robotCanStart) {
+                robotCanStart = true;
+            }
+            await timer()
             await creations.login()
-            console.log('✅ Login executado com sucesso');
             res.json({ success: true, message: 'Login executado com sucesso' });
-
         } catch (error) {
             console.error('❌ Erro no login:', error);
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -430,6 +437,10 @@ function createControlServer() {
     // Endpoint para cadastro de motorista
     app.post('/api/cadastro-motorista', async (req, res) => {
         try {
+            if (!robotCanStart) {
+                robotCanStart = true;
+            }
+            await timer()
             await creations.create_driver();
             res.json({ success: true, message: 'Cadastro de motorista executado com sucesso' });
 
@@ -443,6 +454,10 @@ function createControlServer() {
     // Endpoint para registrar destinatário
     app.post('/api/registrar-destinatario', async (req, res) => {
         try {
+            if (!robotCanStart) {
+                robotCanStart = true;
+            }
+            await timer()
             await creations.create_destination();
             console.log('✅ Registro de destinatário executado com sucesso');
             res.json({ success: true, message: 'Registro de destinatário executado com sucesso' });
@@ -456,6 +471,10 @@ function createControlServer() {
 
     app.post('/api/create-cte', async (req, res) => {
         try {
+             if (!robotCanStart) {
+                robotCanStart = true;
+            }
+            await timer()
             await creations.create_cte();
             console.log('✅ CTe criado com sucesso');
             res.json({ success: true, message: 'CTe criado com sucesso' });
@@ -467,50 +486,12 @@ function createControlServer() {
         }
     });
 
-
-
-    // Endpoint para iniciar o robô
-    app.post('/api/start-robot', async (req, res) => {
-        const config = req.body;
-        general_config = {
-            driver: config.driver,
-            destination: config.destination,
-            note_fiscal: config.note_fiscal,
-            taxes: config.taxes,
-            docs: {
-                access_key: config.docs.access_key
-            },
-            timerDuration: config.timerDuration,
-            emition: config.emition,
-            tax_reform: config.tax_reform,
-
-        };
-
-
-        robotCanStart = true;
-        res.json({ success: true, message: 'Robô iniciando...' });
-    });
-
-
     // Endpoint para iniciar o robô
     app.post('/api/start-agente', async (req, res) => {
-        const config = req.body;
 
-        general_config = {
-            driver: config.driver,
-            destination: config.destination,
-            note_fiscal: config.note_fiscal,
-            taxes: config.taxes,
-            docs: {
-                access_key: config.docs.access_key
-            },
-            timerDuration: config.timerDuration,
-            emition: config.emition,
-            tax_reform: config.tax_reform,
-        };
-
-        robotCanStart = true;
-
+        if (!robotCanStart) {
+            robotCanStart = true;
+        }
         await creations.login();
         await creations.create_driver();
         await creations.create_cte();
@@ -555,9 +536,7 @@ async function openControlWindow() {
         await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
         await controlPage.goto("http://localhost:3000");
     }
-
     browser = controlBrowser;
-
     return controlBrowser;
 }
 
