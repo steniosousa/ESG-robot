@@ -48,6 +48,85 @@ let isPaused = false;
 let shouldStop = false;
 let browser: any = null;
 let page: any = null;
+let loadingMonitorInterval: any = null;
+
+// Sistema global de monitoramento de loading
+async function startGlobalLoadingMonitor() {
+    if (loadingMonitorInterval) {
+        clearInterval(loadingMonitorInterval);
+    }
+
+    console.log("🔍 Iniciando monitoramento global de loading...");
+    
+    loadingMonitorInterval = setInterval(async () => {
+        if (!page) return;
+
+        try {
+            const isLoading = await page.evaluate(() => {
+                const loadingElement = document.querySelector('.load.jqmOverlay');
+                if (!loadingElement) return false;
+                
+                const style = window.getComputedStyle(loadingElement);
+                const isVisible = style.display !== 'none' && 
+                                  style.visibility !== 'hidden' && 
+                                  style.opacity !== '0';
+                
+                // Log adicional para debug
+                if (isVisible) {
+                    console.log('🔍 Loading ainda visível:', {
+                        display: style.display,
+                        visibility: style.visibility,
+                        opacity: style.opacity
+                    });
+                }
+                
+                return isVisible;
+            });
+
+            if (isLoading && !isPaused) {
+                console.log("⏸️ Loading detectado! Pausando execução...");
+                isPaused = true;
+            } else if (!isLoading && isPaused) {
+                console.log("▶️ Loading sumiu! Retomando execução...");
+                isPaused = false;
+            }
+        } catch (error: any) {
+            console.log('⚠️ Erro ao verificar loading:', error.message);
+            // Se der erro, considera que não está mais carregando
+            if (isPaused) {
+                console.log("▶️ Erro detectado, retomando execução...");
+                isPaused = false;
+            }
+        }
+    }, 500); // Aumentei para 500ms para reduzir carga
+}
+
+// Função de espera que respeita o sistema global
+async function waitForGlobalLoading(maxWaitTime: number = 30000) {
+    const startTime = Date.now();
+    
+    while (isPaused) {
+        console.log("⏳ Aguardando loading desaparecer...");
+        
+        // Verifica se excedeu o tempo máximo
+        if (Date.now() - startTime > maxWaitTime) {
+            console.log("⏰ Timeout atingido! Forçando retomada...");
+            isPaused = false;
+            break;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 200));
+    }
+}
+
+// Parar monitoramento quando necessário
+function stopLoadingMonitor() {
+    if (loadingMonitorInterval) {
+        clearInterval(loadingMonitorInterval);
+        loadingMonitorInterval = null;
+        console.log("🛑 Monitoramento de loading parado");
+    }
+}
 let controlPage: any = null;
 
 let pendingPermission: { action: string; resolve: (value: boolean) => void } | null = null;
@@ -67,54 +146,24 @@ function requestPermission(action: string): Promise<boolean> {
     });
 }
 
-async function checkLoadingAndWait(page: any) {
-    console.log("🔍 Vigiando loading...");
-    const selector = '.load.jqmOverlay';
-
-    while (true) {
-        // O evaluate funciona em Playwright e Puppeteer
-        const isVisible = await page.evaluate((sel: string) => {
-            const el = document.querySelector(sel) as HTMLElement;
-            if (!el) return false; // Se não existe, não está visível
-
-            // Verifica se o display é diferente de 'none' e se está visível no layout
-            const style = window.getComputedStyle(el);
-            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-        }, selector);
-
-        if (!isVisible) {
-            return true;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-}
-
-async function waitForLoadingComplete(page: any) {
-    console.log("⏳ Aguardando loading completar...");
-    await checkLoadingAndWait(page);
-    console.log("🚀 Loading completado! Continuando...");
-}
-
 async function listerRequest(includes: string) {
     console.log("esperando resultado da requisição...")
     const responsePromise = page.waitForResponse((res: any) => {
         const matchesUrl = res.url().includes(`${includes}`);
         const isNotPreflight = res.request().method() !== 'OPTIONS';
         return matchesUrl && isNotPreflight;
-    }, { timeout: 5000 });
+    }, { timeout: 10000 });
+    console.log(await responsePromise)
     return responsePromise;
 }
 const creations = {
     "create_driver": async () => {
-
         const { cpf, name } = general_config.driver;
 
         await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
             waitUntil: "networkidle2",
             timeout: 30000
         });
-        await timer()
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula"]';
         await page.waitForSelector(filterSelector, { visible: true });
@@ -123,7 +172,7 @@ const creations = {
         await page.keyboard.press('Backspace');
 
         await page.locator(filterSelector).fill(cpf);
-        const responsePromise = await listerRequest('/odata/Gcadastro');
+        const responsePromise = await listerRequest('Gcadastro');
         await page.keyboard.press('Enter');
 
         const response = await responsePromise;
@@ -161,13 +210,13 @@ const creations = {
             await page.click("egs-button-new button");
             clearAndType("cpfCnpj", cpf_cnpj);
 
-            await waitForLoadingComplete(page);
+            await waitForGlobalLoading();
             if (cpf_cnpj.length === 18) {
                 const submitButton = '#butonConsultaCpfCnpj';
                 await page.waitForSelector(submitButton, { state: 'visible' });
                 await page.click(submitButton);
                 await listerRequest('GetCadastroReceiraFederal')
-                await checkLoadingAndWait(page);
+                await waitForGlobalLoading();
                 clearAndType("inscEstadual", insc_estadual);
 
                 await timer();
@@ -176,20 +225,20 @@ const creations = {
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
-                await waitForLoadingComplete(page);
+                await waitForGlobalLoading();
                 await clearAndSelectOption('contribuinteIcms', "1")
                 await clearAndSelectOption('consumidorFinal', "0")
             }
             else {
                 const selector = 'input[ui-br-cep-mask]';
                 await page.locator(selector).fill(cep);
-                await waitForLoadingComplete(page);
+                await waitForGlobalLoading();
                 await page.click("#buttonCep");
-                await waitForLoadingComplete(page);
+                await waitForGlobalLoading();
                 await listerRequest("GetCEP")
-                await waitForLoadingComplete(page);
+                await waitForGlobalLoading();
                 clearAndType("INSCESTADUAL", insc_estadual);
-                await waitForLoadingComplete(page);
+                await waitForGlobalLoading();
                 await timer();
                 await clearAndTypeByPlaceholder("Ex.: 000", numero);
                 await clearAndTypeByPlaceholder("Informe o endereço", rua);
@@ -214,7 +263,7 @@ const creations = {
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
-                await waitForLoadingComplete(page);
+                await waitForGlobalLoading();
                 await clearAndSelectOption('contribuinteIcms', "1")
                 await clearAndSelectOption('consumidorFinal', "0")
             }
@@ -228,7 +277,7 @@ const creations = {
     "create_cte": async () => {
 
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-        await waitForLoadingComplete(page);
+        await waitForGlobalLoading();
 
         const canClickCopy = await requestPermission("Clicar no botão copiar");
 
@@ -354,10 +403,7 @@ const creations = {
 
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
-        const isLoading = await checkLoadingAndWait(page);
-        if (isLoading) {
-            console.log("✅ Loading parou! Continuando execução...");
-        }
+        await waitForGlobalLoading();
         const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
 
         if (hasCaptcha) {
@@ -505,6 +551,42 @@ function createControlServer() {
         }
     });
 
+    // Endpoint para resetar o robô
+    app.post('/api/reset-robot', async (req, res) => {
+        try {
+            console.log('🔄 Resetando o robô...');
+            
+            // Parar monitoramento de loading
+            stopLoadingMonitor();
+            
+            // Fechar páginas do navegador
+            if (page) {
+                await page.close();
+                page = null;
+            }
+            if (controlPage) {
+                await controlPage.close();
+                controlPage = null;
+            }
+            if (browser) {
+                await browser.close();
+                browser = null;
+            }
+            
+            // Resetar variáveis de estado
+            isPaused = false;
+            shouldStop = false;
+            robotCanStart = false;
+            
+            console.log('✅ Robô resetado com sucesso');
+            res.json({ success: true, message: 'Robô resetado com sucesso' });
+            
+        } catch (error) {
+            console.error('❌ Erro ao resetar robô:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+            res.json({ success: false, message: errorMessage });
+        }
+    });
 
     app.get('/', (req, res) => {
         res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -530,9 +612,10 @@ async function openControlWindow() {
         ]
     };
 
-
     const controlBrowser = await puppeteer.launch(launchOptions);
+    browser = controlBrowser;
 
+    // Criar página de controle
     const pages = await controlBrowser.pages();
     if (pages.length > 0) {
         controlPage = pages[0];
@@ -543,7 +626,11 @@ async function openControlWindow() {
         await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
         await controlPage.goto("http://localhost:3000");
     }
-    browser = controlBrowser;
+
+
+    // Iniciar monitoramento global de loading
+    await startGlobalLoadingMonitor();
+
     return controlBrowser;
 }
 
@@ -580,7 +667,7 @@ const timer = async () => {
 };
 
 async function clearAndSelectOption(name: string, value: string) {
-    await waitForLoadingComplete(page);
+    await waitForGlobalLoading();
     await timer();
 
     let wrapper =

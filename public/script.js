@@ -93,7 +93,6 @@ async function updateStatus() {
         checkNewPermissions(status.permissionRequests || []);
     } catch (error) {
         console.error('Erro ao atualizar status:', error);
-        addLog('Erro ao conectar com o servidor', 'error');
     }
 }
 
@@ -121,7 +120,6 @@ function addPermissionRequest(action, timestamp = Date.now()) {
     pendingPermissions.push(permission);
     updatePermissionsList();
 
-    addLog(`🔔 Solicitação: ${action}`, 'info');
     showNotification(`Solicitação: ${action}`, 'info');
 }
 
@@ -137,7 +135,6 @@ function addPermissionRequest(action) {
     pendingPermissions.push(permission);
     updatePermissionsList();
 
-    addLog(`🔔 Solicitação: ${action}`, 'info');
     showNotification(`Solicitação: ${action}`, 'info');
 }
 
@@ -192,32 +189,14 @@ async function grantPermission(permissionId, granted) {
             pendingPermissions = pendingPermissions.filter(p => p.id !== permissionId);
             updatePermissionsList();
 
-            addLog(`${granted ? '✅' : '❌'} ${permission.action}: ${granted ? 'PERMITIDO' : 'NEGADO'}`,
-                granted ? 'success' : 'error');
             showNotification(`${permission.action}: ${granted ? 'Permitido' : 'Negado'}`,
                 granted ? 'success' : 'error');
         }
     } catch (error) {
         console.error('Erro ao conceder permissão:', error);
-        addLog('Erro ao processar permissão', 'error');
     }
 }
 
-function addLog(message, type = 'info') {
-    const logContent = document.getElementById('log-content');
-    const timestamp = new Date().toLocaleTimeString('pt-BR');
-    const logEntry = document.createElement('div');
-    logEntry.className = `log-entry ${type}`;
-    logEntry.textContent = `[${timestamp}] ${message}`;
-
-    logContent.appendChild(logEntry);
-    logContent.scrollTop = logContent.scrollHeight;
-
-    // Manter apenas as últimas 30 entradas
-    while (logContent.children.length > 30) {
-        logContent.removeChild(logContent.firstChild);
-    }
-}
 
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -370,8 +349,6 @@ function validateConfig(type) {
 
 function fazerLogin() {
     showNotification('🚀 Iniciando processo de login...', 'info');
-    addLog('🔐 Iniciando processo de login', 'info');
-
     // Enviar requisição para executar o login
     fetch('/api/fazer-login', {
         method: 'POST',
@@ -383,16 +360,13 @@ function fazerLogin() {
         .then(data => {
             if (data.success) {
                 showNotification('✅ Login executado com sucesso', 'success');
-                addLog('✅ Processo de login concluído', 'success');
             } else {
                 showNotification('❌ Erro ao fazer login', 'error');
-                addLog('❌ Erro: ' + (data.message || 'Falha no login'), 'error');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
             showNotification('❌ Erro de conexão com o servidor', 'error');
-            addLog('❌ Erro de conexão ao fazer login', 'error');
         });
 }
 
@@ -403,7 +377,6 @@ function cadastrarMotorista() {
     }
 
     showNotification('🚀 Iniciando cadastro de motorista...', 'info');
-    addLog('👤 Iniciando processo de cadastro de motorista', 'info');
 
     // Obter dados atuais do frontend
     const driverData = {
@@ -423,16 +396,13 @@ function cadastrarMotorista() {
         .then(data => {
             if (data.success) {
                 showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
-                addLog('✅ Processo de cadastro de motorista concluído', 'success');
             } else {
                 showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
-                addLog('❌ Erro: ' + (data.message || 'Falha ao iniciar cadastro'), 'error');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
             showNotification('❌ Erro de conexão com o servidor', 'error');
-            addLog('❌ Erro de conexão ao iniciar cadastro de motorista', 'error');
         });
 }
 
@@ -443,7 +413,6 @@ function registrarDestinatario() {
     }
 
     showNotification('🚀 Iniciando registro de destinatário...', 'info');
-    addLog('🏢 Iniciando processo de registro de destinatário', 'info');
 
     // Obter dados atuais do frontend
     const destinationData = {
@@ -469,30 +438,25 @@ function registrarDestinatario() {
         .then(data => {
             if (data.success) {
                 showNotification('✅ Destinatário cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
-                addLog('✅ Processo de registro de destinatário concluído', 'success');
             } else {
                 showNotification('❌ Erro ao registrar destinatário', 'error');
-                addLog('❌ Erro: ' + (data.message || 'Falha ao registrar destinatário'), 'error');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
             showNotification('❌ Erro de conexão com o servidor', 'error');
-            addLog('❌ Erro de conexão ao registrar destinatário', 'error');
         });
 }
 
 // Cadastro de Caminhão
 function cadastrarCaminhao() {
     showNotification('🚀 Iniciando cadastro de caminhão...', 'info');
-    addLog('🚚 Iniciando processo de cadastro de caminhão', 'info');
 
     // Aqui você pode adicionar a lógica para abrir o formulário de cadastro
     // ou redirecionar para a página de cadastro de caminhão
 
     setTimeout(() => {
         showNotification(' Formulário de caminhão pronto para preenchimento', 'success');
-        addLog(' Formulário de caminhão aberto', 'success');
     }, 1000);
 }
 
@@ -503,7 +467,6 @@ function criarCTE() {
     }
 
     showNotification(' Iniciando criação de CTe...', 'info');
-    addLog(' Iniciando processo de criação de CTe', 'info');
 
     const config = {
         driver: {
@@ -558,15 +521,12 @@ function criarCTE() {
         .then(data => {
             if (data.success) {
                 showNotification(' CTe criado com sucesso! Pode criar o próximo.', 'success');
-                addLog(' CTe criado com sucesso', 'success');
             } else {
                 showNotification(' Erro ao criar CTe', 'error');
-                addLog(' Erro: ' + (data.message || 'Falha ao criar CTe'), 'error');
             }
         })
         .catch(error => {
             console.error('Erro:', error);
             showNotification(' Erro de conexão com o servidor', 'error');
-            addLog(' Erro de conexão ao criar CTe', 'error');
         });
 }
