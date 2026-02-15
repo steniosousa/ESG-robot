@@ -1,3 +1,6 @@
+// Log inicial para verificar se o script está sendo executado
+console.log('🚀 [INIT] Script carregado!');
+
 let currentStatus = { isPaused: false, shouldStop: false, isRunning: false, permissionRequests: [] };
 let knownPermissions = new Set();
 let pendingPermissions = [];
@@ -85,8 +88,10 @@ setInterval(updateStatus, 1000); // Reduzido para 1 segundo
 
 async function updateStatus() {
     try {
+        console.log('🔍 [DEBUG] Atualizando status...');
         const response = await fetch('/api/status', { method: 'GET' });
         const status = await response.json();
+        console.log('🔍 [DEBUG] Status recebido:', status);
         currentStatus = status;
 
         checkNewPermissions(status.permissionRequests || []);
@@ -96,6 +101,7 @@ async function updateStatus() {
 }
 
 function checkNewPermissions(permissionRequests) {
+    console.log('🔍 [DEBUG] Verificando novas permissões...');
     permissionRequests.forEach(request => {
         const permissionKey = `${request.action}-${request.timestamp}`;
         if (!knownPermissions.has(permissionKey)) {
@@ -141,6 +147,8 @@ function updatePermissionsList() {
     const permissionsDiv = document.getElementById('permissions');
     const permissionsList = document.getElementById('permissions-list');
 
+    console.log('🔍 [DEBUG] updatePermissionsList chamado. pendingPermissions:', pendingPermissions.length);
+
     if (pendingPermissions.length === 0) {
         permissionsDiv.style.display = 'none';
         return;
@@ -150,20 +158,27 @@ function updatePermissionsList() {
     permissionsList.innerHTML = '';
 
     pendingPermissions.forEach(permission => {
+        console.log('🔍 [DEBUG] Adicionando permissão:', permission);
+        console.log('🔍 [DEBUG] Criando elemento permissionItem...');
         const permissionItem = document.createElement('div');
         permissionItem.className = 'permission-item';
+        console.log('🔍 [DEBUG] Elemento criado:', permissionItem);
+        console.log('🔍 [DEBUG] Definindo innerHTML...');
         permissionItem.innerHTML = `
                     <div class="permission-title">📝 ${permission.action}</div>
                     <div class="permission-buttons">
-                        <button class="btn-permit" onclick="grantPermission(${permission.id}, true)">
+                        <button class="btn-permit" style="background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-right: 5px;" onclick="grantPermission(${permission.id}, true)">
                             ✅ Permitir
                         </button>
-                        <button class="btn-deny" onclick="grantPermission(${permission.id}, false)">
+                        <button class="btn-deny" style="background-color: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;" onclick="grantPermission(${permission.id}, false)">
                             ❌ Negar
                         </button>
                     </div>
                 `;
+        console.log('🔍 [DEBUG] InnerHTML definido:', permissionItem.innerHTML);
+        console.log('🔍 [DEBUG] Adicionando ao DOM...');
         permissionsList.appendChild(permissionItem);
+        console.log('🔍 [DEBUG] Elemento adicionado ao DOM');
     });
 }
 
@@ -219,6 +234,11 @@ function showNotification(message, type = 'info') {
 
 updateStatus();
 
+// Adicionar uma permissão de teste para forçar exibição dos botões
+setTimeout(() => {
+    addPermissionRequest("TESTE - Permitir ou Negar");
+}, 2000);
+
 
 function addAccessKey() {
     const input = document.getElementById('access_key_input');
@@ -259,7 +279,9 @@ function updateKeysList() {
     keysList.innerHTML = accessKeys.map((key, index) => `
                 <div class="key-item">
                     <span class="key-text">${key}</span>
-                    <button type="button" class="btn-delete" onclick="removeAccessKey(${index})">🗑️ Excluir</button>
+                    <button type="button" class="btn-delete" style="background-color: #dc3545; color: #ffffff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;" onclick="removeAccessKey(${index})">
+                        Excluir
+                    </button>
                 </div>
             `).join('');
 }

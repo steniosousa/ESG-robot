@@ -54,9 +54,6 @@ async function startGlobalLoadingMonitor() {
     if (loadingMonitorInterval) {
         clearInterval(loadingMonitorInterval);
     }
-
-    console.log("🔍 Iniciando monitoramento global de loading...");
-    
     loadingMonitorInterval = setInterval(async () => {
         if (!page) return;
 
@@ -64,12 +61,12 @@ async function startGlobalLoadingMonitor() {
             const isLoading = await page.evaluate(() => {
                 const loadingElement = document.querySelector('.load.jqmOverlay');
                 if (!loadingElement) return false;
-                
+
                 const style = window.getComputedStyle(loadingElement);
-                const isVisible = style.display !== 'none' && 
-                                  style.visibility !== 'hidden' && 
-                                  style.opacity !== '0';
-                
+                const isVisible = style.display !== 'none' &&
+                    style.visibility !== 'hidden' &&
+                    style.opacity !== '0';
+
                 // Log adicional para debug
                 if (isVisible) {
                     console.log('🔍 Loading ainda visível:', {
@@ -78,7 +75,7 @@ async function startGlobalLoadingMonitor() {
                         opacity: style.opacity
                     });
                 }
-                
+
                 return isVisible;
             });
 
@@ -90,10 +87,7 @@ async function startGlobalLoadingMonitor() {
                 isPaused = false;
             }
         } catch (error: any) {
-            console.log('⚠️ Erro ao verificar loading:', error.message);
-            // Se der erro, considera que não está mais carregando
             if (isPaused) {
-                console.log("▶️ Erro detectado, retomando execução...");
                 isPaused = false;
             }
         }
@@ -103,17 +97,15 @@ async function startGlobalLoadingMonitor() {
 // Função de espera que respeita o sistema global
 async function waitForGlobalLoading(maxWaitTime: number = 30000) {
     const startTime = Date.now();
-    
+
     while (isPaused) {
-        console.log("⏳ Aguardando loading desaparecer...");
-        
+
         // Verifica se excedeu o tempo máximo
         if (Date.now() - startTime > maxWaitTime) {
-            console.log("⏰ Timeout atingido! Forçando retomada...");
             isPaused = false;
             break;
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, 200));
     }
 }
@@ -123,7 +115,6 @@ function stopLoadingMonitor() {
     if (loadingMonitorInterval) {
         clearInterval(loadingMonitorInterval);
         loadingMonitorInterval = null;
-        console.log("🛑 Monitoramento de loading parado");
     }
 }
 let controlPage: any = null;
@@ -397,6 +388,7 @@ const creations = {
     },
     "login": async () => {
 
+
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
         await waitForGlobalLoading();
@@ -434,7 +426,7 @@ function createControlServer() {
     app.use(express.json());
     app.use(express.static(path.join(__dirname, '../public')));
 
-    app.get('/api/status', (req, res) => {
+    app.get('/api/status', async (req, res) => {
         res.json({
             isPaused,
             shouldStop,
@@ -455,6 +447,13 @@ function createControlServer() {
         if (pendingPermission && pendingPermission.action === action) {
             pendingPermission.resolve(granted);
             pendingPermission = null;
+        }
+
+        // Remover permissão do array para não aparecer novamente
+        const requestIndex = permissionRequests.findIndex(req => req.action === action);
+        if (requestIndex !== -1) {
+            permissionRequests.splice(requestIndex, 1);
+            console.log(`🗑️ Permissão "${action}" removida do array. Restantes: ${permissionRequests.length}`);
         }
 
         res.json({ success: true });
@@ -480,19 +479,17 @@ function createControlServer() {
     app.post('/api/cadastro-motorista', async (req, res) => {
         try {
             if (!robotCanStart) {
-                robotCanStart = true;
+                return res.json({ success: false, message: 'Robô não está pronto para executar esta ação' });
             }
             const driverData = req.body;
 
             general_config.driver.cpf = driverData.cpf;
             general_config.driver.name = driverData.name;
 
-            await timer()
             await creations.create_driver();
             res.json({ success: true, message: 'Cadastro de motorista executado com sucesso' });
 
         } catch (error) {
-            console.error('❌ Erro no cadastro de motorista:', error);
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
             res.json({ success: false, message: errorMessage });
         }
@@ -502,7 +499,7 @@ function createControlServer() {
     app.post('/api/registrar-destinatario', async (req, res) => {
         try {
             if (!robotCanStart) {
-                robotCanStart = true;
+                return res.json({ success: false, message: 'Robô não está pronto para executar esta ação' });
             }
             const destinationData = req.body;
 
@@ -515,7 +512,6 @@ function createControlServer() {
             general_config.destination.bairro = destinationData.bairro;
 
 
-            await timer()
             await creations.create_destination();
             console.log('✅ Registro de destinatário executado com sucesso');
             res.json({ success: true, message: 'Registro de destinatário executado com sucesso' });
@@ -530,55 +526,17 @@ function createControlServer() {
     app.post('/api/create-cte', async (req, res) => {
         try {
             if (!robotCanStart) {
-                robotCanStart = true;
+                return res.json({ success: false, message: 'Robô não está pronto para executar esta ação' });
             }
 
             const cteData = req.body;
             general_config = cteData;
-            await timer()
             await creations.create_cte();
             console.log('✅ CTe criado com sucesso');
             res.json({ success: true, message: 'CTe criado com sucesso' });
 
         } catch (error) {
             console.error('❌ Erro no registro de destinatário:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-            res.json({ success: false, message: errorMessage });
-        }
-    });
-
-    // Endpoint para resetar o robô
-    app.post('/api/reset-robot', async (req, res) => {
-        try {
-            console.log('🔄 Resetando o robô...');
-            
-            // Parar monitoramento de loading
-            stopLoadingMonitor();
-            
-            // Fechar páginas do navegador
-            if (page) {
-                await page.close();
-                page = null;
-            }
-            if (controlPage) {
-                await controlPage.close();
-                controlPage = null;
-            }
-            if (browser) {
-                await browser.close();
-                browser = null;
-            }
-            
-            // Resetar variáveis de estado
-            isPaused = false;
-            shouldStop = false;
-            robotCanStart = false;
-            
-            console.log('✅ Robô resetado com sucesso');
-            res.json({ success: true, message: 'Robô resetado com sucesso' });
-            
-        } catch (error) {
-            console.error('❌ Erro ao resetar robô:', error);
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
             res.json({ success: false, message: errorMessage });
         }
@@ -751,6 +709,7 @@ async function clearAndSelectOption(name: string, value: string) {
 async function main() {
     createControlServer();
     openControlWindow();
+    await requestPermission("fazer login");
 
     while (!robotCanStart && !shouldStop) {
         await new Promise(resolve => setTimeout(resolve, 1000));
