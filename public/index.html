@@ -896,7 +896,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>CPF/CNPJ</label>
-                        <input type="text" id="dest_cpf_cnpj" placeholder="Digite o CPF ou CNPJ">
+                        <input type="text" id="dest_cpf_cnpj" placeholder="Digite o CPF ou CNPJ" oninput="formatarCpfCnpj(this)" maxlength="18">
                     </div>
                     <div class="form-group">
                         <label>Razão Social</label>
@@ -911,8 +911,16 @@
                         <input type="text" id="dest_insc_estadual" placeholder="Digite a inscrição estadual">
                     </div>
                     <div class="form-group">
-                        <label>Número</label>
-                        <input type="text" id="dest_numero" placeholder="Digite o número">
+                        <label>Rua</label>
+                        <input type="text" id="dest_rua" placeholder="Digite a rua">
+                    </div>
+                    <div class="form-group">
+                        <label>Bairro</label>
+                        <input type="text" id="dest_bairro" placeholder="Digite o bairro">
+                    </div>
+                    <div class="form-group">
+                        <label>Cidade</label>
+                        <input type="text" id="dest_cidade" placeholder="Digite a cidade">
                     </div>
                 </div>
             </div>
@@ -923,7 +931,7 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>CPF</label>
-                        <input type="text" id="driver_cpf" placeholder="Digite o CPF ou CNPJ">
+                        <input type="text" id="driver_cpf" oninput="formatarCpfCnpj(this)" maxlength="18" placeholder="Digite o CPF ou CNPJ">
                     </div>
                     <div class="form-group">
                         <label>Nome</label>
@@ -978,62 +986,62 @@
                     </div>
                 </div>
 
-                <!-- Veículo e Motorista -->
-                <div class="config-subsection">
-                    <h3>🚚 Veículo</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Placa do veículo:</label>
-                            <input type="text" id="vehicle" placeholder="Ex: ABZ0A56">
-                        </div>
+            </div>
+            <!-- Veículo e Motorista -->
+            <div class="config-subsection">
+                <h3>🚚 Veículo</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Placa do veículo:</label>
+                        <input type="text" id="vehicle" placeholder="Ex: ABZ0A56">
+                    </div>
 
-                        <div class="form-group">
-                            <label>Valor B.C. ICMS:</label>
-                            <input type="text" id="valor_bc_icms" placeholder="Ex: 128,99">
-                        </div>
-                        <div class="form-group">
-                            <label>Valor do ICMS:</label>
-                            <input type="text" id="valor_icms" placeholder="Ex: 18,13">
-                        </div>
+                    <div class="form-group">
+                        <label>Valor B.C. ICMS:</label>
+                        <input type="text" id="valor_bc_icms" placeholder="Ex: 128,99">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor do ICMS:</label>
+                        <input type="text" id="valor_icms" placeholder="Ex: 18,13">
                     </div>
                 </div>
+            </div>
 
 
 
-                <!-- Emissão -->
-                <div class="config-subsection">
-                    <h3>📤 Emissão</h3>
+            <!-- Emissão -->
+            <div class="config-subsection">
+                <h3>📤 Emissão</h3>
+                <div class="form-group">
+                    <label>Finalidade do CTe:</label>
+                    <select id="finality">
+                        <option value="0">Normal</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Reforma Tributária -->
+            <div class="config-subsection">
+                <h3>💰 Reforma Tributária</h3>
+                <div class="form-grid">
                     <div class="form-group">
-                        <label>Finalidade do CTe:</label>
-                        <select id="finality">
-                            <option value="0">Normal</option>
+                        <label>Editar IBS:</label>
+                        <select id="edit_ibs">
+                            <option value="true">Sim</option>
+                            <option value="false">Não</option>
                         </select>
                     </div>
-                </div>
-
-                <!-- Reforma Tributária -->
-                <div class="config-subsection">
-                    <h3>💰 Reforma Tributária</h3>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Editar IBS:</label>
-                            <select id="edit_ibs">
-                                <option value="true">Sim</option>
-                                <option value="false">Não</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>V. BC IBS/CBS:</label>
-                            <input type="text" id="v_bc" placeholder="Ex: 128,99">
-                        </div>
-                        <div class="form-group">
-                            <label>V. CBS:</label>
-                            <input type="text" id="v_cbs" placeholder="Ex: 18,13">
-                        </div>
-                        <div class="form-group">
-                            <label>V. IBS UF / V. IBS:</label>
-                            <input type="text" id="v_ibs" placeholder="Ex: 1,81">
-                        </div>
+                    <div class="form-group">
+                        <label>V. BC IBS/CBS:</label>
+                        <input type="text" id="v_bc" placeholder="Ex: 128,99">
+                    </div>
+                    <div class="form-group">
+                        <label>V. CBS:</label>
+                        <input type="text" id="v_cbs" placeholder="Ex: 18,13">
+                    </div>
+                    <div class="form-group">
+                        <label>V. IBS UF / V. IBS:</label>
+                        <input type="text" id="v_ibs" placeholder="Ex: 1,81">
                     </div>
                 </div>
             </div>
@@ -1067,6 +1075,45 @@
         let currentStatus = { isPaused: false, shouldStop: false, isRunning: false, permissionRequests: [] };
         let knownPermissions = new Set();
         let pendingPermissions = [];
+
+        // Função para formatar CPF/CNPJ
+        function formatarCpfCnpj(input) {
+            let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+            
+            // Limita o comprimento máximo
+            if (value.length > 14) {
+                value = value.substring(0, 14);
+            }
+            
+            // Formata como CPF (XXX.XXX.XXX-XX) ou CNPJ (XX.XXX.XXX/XXXX-XX)
+            if (value.length <= 11) {
+                // Formato CPF: XXX.XXX.XXX-XX
+                if (value.length <= 3) {
+                    value = value;
+                } else if (value.length <= 6) {
+                    value = value.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+                } else if (value.length <= 9) {
+                    value = value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+                } else {
+                    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+                }
+            } else {
+                // Formato CNPJ: XX.XXX.XXX/XXXX-XX
+                if (value.length <= 2) {
+                    value = value;
+                } else if (value.length <= 5) {
+                    value = value.replace(/(\d{2})(\d{0,3})/, '$1.$2');
+                } else if (value.length <= 8) {
+                    value = value.replace(/(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
+                } else if (value.length <= 12) {
+                    value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
+                } else {
+                    value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
+                }
+            }
+            
+            input.value = value;
+        }
 
         setInterval(updateStatus, 1000); // Reduzido para 1 segundo
 
@@ -1127,7 +1174,9 @@
                     razao_social: document.getElementById('dest_razao_social').value,
                     cep: document.getElementById('dest_cep').value,
                     insc_estadual: document.getElementById('dest_insc_estadual').value,
-                    numero: document.getElementById('dest_numero').value
+                    numero: document.getElementById('dest_numero').value,
+                    rua: document.getElementById('dest_rua').value,
+                    bairro: document.getElementById('dest_bairro').value
                 },
                 note_fiscal: {
                     destination: document.getElementById('note_fiscal_destination').value,
@@ -1182,15 +1231,17 @@
 
             const config = {
                 driver: {
-                    cpf: "1",
-                    name: "lula"
+                    cpf: document.getElementById('driver_cpf').value,
+                    name: document.getElementById('driver_name').value
                 },
                 destination: {
-                    cpf_cnpj: "013.981.230-05",
-                    razao_social: "lula",
-                    cep: "60831545",
-                    insc_estadual: "bolsonaro",
-                    numero: "666"
+                    cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+                    razao_social: document.getElementById('dest_razao_social').value,
+                    cep: document.getElementById('dest_cep').value,
+                    insc_estadual: document.getElementById('dest_insc_estadual').value,
+                    numero: document.getElementById('dest_numero').value,
+                    rua: document.getElementById('dest_rua').value,
+                    bairro: document.getElementById('dest_bairro').value
                 },
                 note_fiscal: {
                     destination: document.getElementById('note_fiscal_destination').value,

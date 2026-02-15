@@ -12,7 +12,9 @@ let general_config = {
         razao_social: '',
         cep: '',
         insc_estadual: '',
-        numero: ''
+        numero: '',
+        rua: '',
+        bairro: ''
     },
     note_fiscal: {
         destination: "",
@@ -133,7 +135,7 @@ const creations = {
         }
     },
     "create_destination": async () => {
-        const { cpf_cnpj, insc_estadual, razao_social, cep, numero } = general_config.destination;
+        const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = general_config.destination;
 
         await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
             waitUntil: "networkidle2",
@@ -167,8 +169,8 @@ const creations = {
                 clearAndType("inscEstadual", insc_estadual);
 
                 await timer();
-                await clearAndTypeByPlaceholder("Informe o endereço", "rua nova");
-                await clearAndTypeByPlaceholder("Informe o bairro", "bairro novo");
+                await clearAndTypeByPlaceholder("Informe o endereço", rua);
+                await clearAndTypeByPlaceholder("Informe o bairro", bairro);
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
@@ -188,8 +190,8 @@ const creations = {
                 await waitForLoadingComplete(page);
                 await timer();
                 await clearAndTypeByPlaceholder("Ex.: 000", numero);
-                await clearAndTypeByPlaceholder("Informe o endereço", "rua nova");
-                await clearAndTypeByPlaceholder("Informe o bairro", "bairro novo");
+                await clearAndTypeByPlaceholder("Informe o endereço", rua);
+                await clearAndTypeByPlaceholder("Informe o bairro", bairro);
                 await timer();
                 await page.waitForSelector("input[name='INSCESTADUAL']", { timeout: 10000 });
 
@@ -505,7 +507,6 @@ function createControlServer() {
             timerDuration: config.timerDuration,
             emition: config.emition,
             tax_reform: config.tax_reform,
-
         };
 
         robotCanStart = true;
