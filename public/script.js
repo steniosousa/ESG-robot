@@ -6,46 +6,6 @@ let knownPermissions = new Set();
 let pendingPermissions = [];
 let accessKeys = [];
 
-const config = {
-    driver: {
-        cpf: document.getElementById('driver_cpf').value,
-        name: document.getElementById('driver_name').value
-    },
-    destination: {
-        cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
-        razao_social: document.getElementById('dest_razao_social').value,
-        cep: document.getElementById('dest_cep').value,
-        insc_estadual: document.getElementById('dest_insc_estadual').value,
-        numero: document.getElementById('dest_numero').value,
-        rua: document.getElementById('dest_rua').value,
-        bairro: document.getElementById('dest_bairro').value
-    },
-    note_fiscal: {
-        load_value: document.getElementById('note_fiscal_load_value').value,
-        quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
-        load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
-        service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value)
-    },
-    taxes: {
-        vehicle: document.getElementById('vehicle').value,
-        Valor_BC_ICMS: document.getElementById('valor_bc_icms').value,
-        Valor_ICMS: document.getElementById('valor_icms').value
-    },
-    docs: {
-        access_key: accessKeys
-    },
-    emition: {
-        finality: document.getElementById('finality').value
-    },
-    tax_reform: {
-        edit_ibs: document.getElementById('edit_ibs').value === 'true',
-        Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
-        Valor_CBS: document.getElementById('v_cbs').value,
-        Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
-    },
-    timerDuration: document.getElementById('timer_duration').value
-};
-
 function formatarCpfCnpj(input) {
     let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
 
@@ -128,21 +88,6 @@ function addPermissionRequest(action, timestamp = Date.now()) {
     showNotification(`Solicitação: ${action}`, 'info');
 }
 
-
-function addPermissionRequest(action) {
-    const permissionId = Date.now();
-    const permission = {
-        id: permissionId,
-        action: action,
-        timestamp: new Date()
-    };
-
-    pendingPermissions.push(permission);
-    updatePermissionsList();
-
-    showNotification(`Solicitação: ${action}`, 'info');
-}
-
 function updatePermissionsList() {
     const permissionsDiv = document.getElementById('permissions');
     const permissionsList = document.getElementById('permissions-list');
@@ -159,11 +104,8 @@ function updatePermissionsList() {
 
     pendingPermissions.forEach(permission => {
         console.log('🔍 [DEBUG] Adicionando permissão:', permission);
-        console.log('🔍 [DEBUG] Criando elemento permissionItem...');
         const permissionItem = document.createElement('div');
         permissionItem.className = 'permission-item';
-        console.log('🔍 [DEBUG] Elemento criado:', permissionItem);
-        console.log('🔍 [DEBUG] Definindo innerHTML...');
         permissionItem.innerHTML = `
                     <div class="permission-title">📝 ${permission.action}</div>
                     <div class="permission-buttons">
@@ -175,10 +117,8 @@ function updatePermissionsList() {
                         </button>
                     </div>
                 `;
-        console.log('🔍 [DEBUG] InnerHTML definido:', permissionItem.innerHTML);
-        console.log('🔍 [DEBUG] Adicionando ao DOM...');
         permissionsList.appendChild(permissionItem);
-        console.log('🔍 [DEBUG] Elemento adicionado ao DOM');
+        console.log('🔍 [DEBUG] Botão adicionado ao DOM');
     });
 }
 
@@ -211,7 +151,6 @@ async function grantPermission(permissionId, granted) {
     }
 }
 
-
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = 'notification';
@@ -233,12 +172,6 @@ function showNotification(message, type = 'info') {
 }
 
 updateStatus();
-
-// Adicionar uma permissão de teste para forçar exibição dos botões
-setTimeout(() => {
-    addPermissionRequest("TESTE - Permitir ou Negar");
-}, 2000);
-
 
 function addAccessKey() {
     const input = document.getElementById('access_key_input');
@@ -506,7 +439,8 @@ function criarCTE() {
             load_value: document.getElementById('note_fiscal_load_value').value,
             quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
             load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
-            service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value)
+            service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value),
+            type: document.getElementById('note_fiscal_type').value
         },
         taxes: {
             vehicle: document.getElementById('vehicle').value,
@@ -520,7 +454,6 @@ function criarCTE() {
             finality: document.getElementById('finality').value
         },
         tax_reform: {
-            edit_ibs: document.getElementById('edit_ibs').value === 'true',
             Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
             Valor_CBS: document.getElementById('v_cbs').value,
             Valor_IBS_UF_IBS: document.getElementById('v_ibs').value

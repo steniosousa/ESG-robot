@@ -35,7 +35,6 @@ let general_config = {
         finality: ""
     },
     tax_reform: {
-        edit_ibs: true,
         Valor_BC_IBS_CBS: "",
         Valor_CBS: "",
         Valor_IBS_UF_IBS: ""
@@ -277,7 +276,6 @@ const creations = {
         await page.waitForSelector("input[name='valorCarga']", { timeout: 10000 });
 
         await clearAndSelectOption('destinatario', general_config.destination.cpf_cnpj);
-
         await clearAndType('valorCarga', general_config.note_fiscal.load_value);
 
         await clearAndType('prodPredominante', general_config.note_fiscal.type);
@@ -377,14 +375,16 @@ const creations = {
 
         //reforma tributaria
         await page.click('li[id="ReformaTrib"]');
-
+        await timer()
         await clearAndType('vBC', general_config.tax_reform.Valor_BC_IBS_CBS);
+        await timer()
 
         await clearAndType('vCBS', general_config.tax_reform.Valor_CBS);
-
-        await clearAndType('vIBS', general_config.tax_reform.Valor_IBS_UF_IBS);
+        await timer()
 
         await clearAndType('vIBSUF', general_config.tax_reform.Valor_IBS_UF_IBS);
+        await timer()
+        await clearAndType('vIBS', general_config.tax_reform.Valor_IBS_UF_IBS);
     },
     "login": async () => {
 
@@ -709,7 +709,6 @@ async function clearAndSelectOption(name: string, value: string) {
 async function main() {
     createControlServer();
     openControlWindow();
-    await requestPermission("fazer login");
 
     while (!robotCanStart && !shouldStop) {
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -720,6 +719,8 @@ async function main() {
 
     page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    await requestPermission("fazer login");
+
 }
 
 main().catch(console.error);
