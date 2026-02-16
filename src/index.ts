@@ -21,21 +21,16 @@ let general_config = {
         quantity: '',
         load_service: '',
         type: "",
-        service_recipient: ''
+        service_recipient: '',
     },
     taxes: {
         vehicle: "",
-        Valor_BC_ICMS: "",
         Valor_ICMS: ""
     },
     docs: {
         access_key: []
     },
-    emition: {
-        finality: ""
-    },
     tax_reform: {
-        Valor_BC_IBS_CBS: "",
         Valor_CBS: "",
         Valor_IBS_UF_IBS: ""
     },
@@ -209,8 +204,8 @@ const creations = {
                 clearAndType("inscEstadual", insc_estadual);
 
                 await timer();
-                await clearAndTypeByPlaceholder("Informe o endereço", rua);
-                await clearAndTypeByPlaceholder("Informe o bairro", bairro);
+                // await clearAndTypeByPlaceholder("Informe o endereço", rua);
+                // await clearAndTypeByPlaceholder("Informe o bairro", bairro);
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
@@ -299,7 +294,7 @@ const creations = {
 
         await clearAndSelectOption("IDMOTORISTA", general_config.driver.cpf);
 
-        await clearAndType('valorbcICMS', general_config.taxes.Valor_BC_ICMS);
+        await clearAndType('valorbcICMS', general_config.note_fiscal.service_recipient);
         await clearAndType('valorIcms', general_config.taxes.Valor_ICMS);
 
         await page.click('li[id="documentos"]');
@@ -333,7 +328,7 @@ const creations = {
 
         //emissao
         await page.click('li[id="emissao"]');
-        await clearAndSelectOption('finalidadeCte', general_config.emition.finality);
+        await clearAndSelectOption('finalidadeCte', '0');
 
         //obs
         await page.waitForSelector('a[link-id="cteNormal"]');
@@ -376,7 +371,7 @@ const creations = {
         //reforma tributaria
         await page.click('li[id="ReformaTrib"]');
         await timer()
-        await clearAndType('vBC', general_config.tax_reform.Valor_BC_IBS_CBS);
+        await clearAndType('vBC', general_config.note_fiscal.service_recipient);
         await timer()
 
         await clearAndType('vCBS', general_config.tax_reform.Valor_CBS);
@@ -719,7 +714,6 @@ async function main() {
 
     page = await browser.newPage();
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-    await requestPermission("fazer login");
 
 }
 

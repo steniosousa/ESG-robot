@@ -44,6 +44,18 @@ function formatarCpfCnpj(input) {
     input.value = value;
 }
 
+function calcPercent() {
+    let value = document.getElementById('note_fiscal_service_recipient').value;
+    let v_ibs = document.getElementById('v_ibs').value = (value * 0.1) / 100;
+    let v_cbs = document.getElementById('v_cbs').value = (value * 0.9) / 100;
+    if (value == '') {
+        document.getElementById('v_ibs').value = '0,1%';
+        document.getElementById('v_cbs').value = '0,9%';
+        return;
+    }
+
+}
+
 setInterval(updateStatus, 1000); // Reduzido para 1 segundo
 
 async function updateStatus() {
@@ -242,17 +254,25 @@ function validateConfig(type) {
             { id: 'driver_name', name: 'Nome do Motorista' }
         ];
     } else if (type === "destination") {
-        requiredFields = [
-            { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
-            { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
-            { id: 'dest_cep', name: 'CEP do destinatário' },
-            { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
-            { id: 'dest_numero', name: 'Número do destinatário' }
-        ];
+        const element = document.getElementById("dest_cpf_cnpj");
+        console.log("dest_cpf_cnpj", element.value.length);
+        if (element.value.length === 18) {
+            requiredFields = [
+                { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
+                { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
+            ];
+        } else {
+            requiredFields = [
+                { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
+                { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
+                { id: 'dest_cep', name: 'CEP do destinatário' },
+                { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
+                { id: 'dest_numero', name: 'Número do destinatário' }
+            ];
+        }
     } else if (type === "vehicle") {
         requiredFields = [
             { id: 'vehicle', name: 'Veículo' },
-            { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
             { id: 'valor_icms', name: 'Valor ICMS' }
         ];
     } else {
@@ -270,10 +290,8 @@ function validateConfig(type) {
             { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
             { id: 'note_fiscal_type', name: 'Tipo de Carga' },
             { id: 'vehicle', name: 'Veículo' },
-            { id: 'valor_bc_icms', name: 'Valor BC ICMS' },
             { id: 'valor_icms', name: 'Valor ICMS' },
             { id: 'v_cbs', name: 'Valor CBSe' },
-            { id: 'v_bc', name: 'Valor do IBS' },
             { id: 'v_ibs', name: 'Valor IBS' }
         ];
     }
@@ -285,6 +303,10 @@ function validateConfig(type) {
             continue;
         }
         const value = element.value.trim();
+        if (element === 'dest_cpf_cnpj' && value.length === 18) {
+            requiredFields.filter(field => field.id !== 'dest_cpf_cnpj');
+        }
+
         if (!value) {
             showNotification(`Preencha o campo: ${field.name}`, 'error');
             return false;
@@ -367,17 +389,27 @@ function registrarDestinatario() {
 
     showNotification('🚀 Iniciando registro de destinatário...', 'info');
 
-    // Obter dados atuais do frontend
-    const destinationData = {
-        cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
-        razao_social: document.getElementById('dest_razao_social').value,
-        cep: document.getElementById('dest_cep').value,
-        insc_estadual: document.getElementById('dest_insc_estadual').value,
-        numero: document.getElementById('dest_numero').value,
-        rua: document.getElementById('dest_rua').value,
-        bairro: document.getElementById('dest_bairro').value,
-        cidade: document.getElementById('dest_cidade').value
-    };
+    let destinationData;
+    const contentCpfCnpj = document.getElementById('dest_cpf_cnpj').value
+    if (contentCpfCnpj.length === 18) {
+        destinationData = {
+            cpf_cnpj: contentCpfCnpj,
+            insc_estadual: document.getElementById('dest_insc_estadual').value,
+        };
+    } else {
+        destinationData = {
+            cpf_cnpj: contentCpfCnpj,
+            razao_social: document.getElementById('dest_razao_social').value,
+            cep: document.getElementById('dest_cep').value,
+            insc_estadual: document.getElementById('dest_insc_estadual').value,
+            numero: document.getElementById('dest_numero').value,
+            rua: document.getElementById('dest_rua').value,
+            bairro: document.getElementById('dest_bairro').value,
+            cidade: document.getElementById('dest_cidade').value
+        };
+    }
+
+
 
     // Enviar requisição para executar o registro de destinatário com os dados atuais
     fetch('/api/registrar-destinatario', {
@@ -444,17 +476,12 @@ function criarCTE() {
         },
         taxes: {
             vehicle: document.getElementById('vehicle').value,
-            Valor_BC_ICMS: document.getElementById('valor_bc_icms').value,
             Valor_ICMS: document.getElementById('valor_icms').value
         },
         docs: {
             access_key: accessKeys
         },
-        emition: {
-            finality: document.getElementById('finality').value
-        },
         tax_reform: {
-            Valor_BC_IBS_CBS: document.getElementById('v_bc').value,
             Valor_CBS: document.getElementById('v_cbs').value,
             Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
         },
