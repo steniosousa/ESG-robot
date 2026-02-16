@@ -120,26 +120,21 @@ let permissionRequests: Array<{ action: string; timestamp: number }> = [];
 let robotCanStart = false;
 
 function requestPermission(action: string): Promise<boolean> {
-    console.log(`🔔 [DEBUG] Criando solicitação de permissão para: ${action}`);
     return new Promise((resolve) => {
         pendingPermission = { action, resolve };
         permissionRequests.push({
             action,
             timestamp: Date.now()
         });
-        console.log(`🔔 [DEBUG] Permissão adicionada ao array. Total: ${permissionRequests.length}`);
-        console.log(`🔔 [DEBUG] Array de permissões:`, permissionRequests);
     });
 }
 
 async function listerRequest(includes: string) {
-    console.log("esperando resultado da requisição...")
     const responsePromise = page.waitForResponse((res: any) => {
         const matchesUrl = res.url().includes(`${includes}`);
         const isNotPreflight = res.request().method() !== 'OPTIONS';
         return matchesUrl && isNotPreflight;
     }, { timeout: 10000 });
-    console.log(await responsePromise)
     return responsePromise;
 }
 const creations = {
@@ -171,7 +166,6 @@ const creations = {
         }
     },
     "create_destination": async () => {
-
         const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = general_config.destination;
 
         await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
@@ -183,7 +177,6 @@ const creations = {
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
         await page.waitForSelector(filterSelector, { visible: true });
-
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
         const responsePromise = listerRequest('/odata/Gcadastro');
@@ -195,32 +188,27 @@ const creations = {
         if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
             clearAndType("cpfCnpj", cpf_cnpj);
-
-            await waitForGlobalLoading();
             if (cpf_cnpj.length === 18) {
                 const submitButton = '#butonConsultaCpfCnpj';
                 await page.waitForSelector(submitButton, { state: 'visible' });
                 await page.click(submitButton);
                 listerRequest('GetCadastroReceiraFederal')
-                await waitForGlobalLoading();
                 clearAndType("inscEstadual", insc_estadual);
-
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
-                await waitForGlobalLoading();
                 await clearAndSelectOption('contribuinteIcms', "1")
                 await clearAndSelectOption('consumidorFinal', "0")
             }
             else {
                 const selector = 'input[ui-br-cep-mask]';
                 await page.locator(selector).fill(cep);
-                await waitForGlobalLoading();
+                
                 listerRequest("GetCEP")
                 await page.click("#buttonCep");
-                await waitForGlobalLoading();
+                
                 clearAndType("INSCESTADUAL", insc_estadual);
-                await waitForGlobalLoading();
+                
                 await timer();
                 await clearAndTypeByPlaceholder("Ex.: 000", numero);
                 await clearAndTypeByPlaceholder("Informe o endereço", rua);
@@ -245,7 +233,7 @@ const creations = {
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
-                await waitForGlobalLoading();
+                
                 await clearAndSelectOption('contribuinteIcms', "1")
                 await clearAndSelectOption('consumidorFinal', "0")
             }
@@ -258,7 +246,7 @@ const creations = {
     },
     "create_cte": async () => {
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-        await waitForGlobalLoading();
+        
 
         const canClickCopy = await requestPermission("Clicar no botão copiar");
 
@@ -381,7 +369,7 @@ const creations = {
     },
     "create_trucker": async () => {
         await page.goto("https://app.egssistemas.com.br/veiculo", { waitUntil: "domcontentloaded", timeout: 30000 });
-        await waitForGlobalLoading();
+        
 
         const filterSelector = 'td:nth-of-type(2) input[aria-label="Filtro de célula"]';
         await page.waitForSelector(filterSelector, { visible: true });
@@ -409,7 +397,7 @@ const creations = {
 
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
-        await waitForGlobalLoading();
+        
         const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
 
         if (hasCaptcha) {
@@ -532,7 +520,6 @@ function createControlServer() {
         }
     });
 
-    // Endpoint para registrar destinatário
     app.post('/api/registrar-destinatario', async (req, res) => {
         try {
             if (!robotCanStart) {
@@ -619,7 +606,6 @@ async function openControlWindow() {
     }
 
 
-    // Iniciar monitoramento global de loading
     await startGlobalLoadingMonitor();
 
     return controlBrowser;
@@ -658,7 +644,7 @@ const timer = async () => {
 };
 
 async function clearAndSelectOption(name: string, value: string) {
-    await waitForGlobalLoading();
+    
     await timer();
 
     let wrapper =
