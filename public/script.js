@@ -270,10 +270,20 @@ function validateConfig(type) {
                 { id: 'dest_numero', name: 'Número do destinatário' }
             ];
         }
-    } else if (type === "vehicle") {
+    } else if (type === "truck") {
         requiredFields = [
-            { id: 'vehicle', name: 'Veículo' },
-            { id: 'valor_icms', name: 'Valor ICMS' }
+            { id: 'plate', name: 'Veículo' },
+            { id: 'trucker_uf', name: 'UF do veículo' },
+            { id: 'renavam', name: 'renavam' },
+            { id: 'description', name: 'Descrição' },
+            { id: 'type_trucker', name: 'Tipo do veículo' },
+            { id: 'type_wheelset', name: 'Tipo do veículo' },
+            { id: 'type_body', name: 'Tipo do veículo' },
+            { id: 'type_owner', name: 'Tipo do veículo' },
+            { id: 'weight', name: 'Peso' },
+            { id: 'capacity', name: 'Capacidade' },
+            { id: 'rntrc', name: 'RNTRC' },
+
         ];
     } else {
         // Validação completa (tipo não especificado)
@@ -289,8 +299,22 @@ function validateConfig(type) {
             { id: 'note_fiscal_quantity', name: 'Quantidade' },
             { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
             { id: 'note_fiscal_type', name: 'Tipo de Carga' },
-            { id: 'vehicle', name: 'Veículo' },
-            { id: 'valor_icms', name: 'Valor ICMS' },
+            { id: 'note_fiscal_load_icms', name: 'Valor ICMS' },
+
+
+            { id: 'plate', name: 'Veículo' },
+            { id: 'trucker_uf', name: 'UF do veículo' },
+            { id: 'renavam', name: 'renavam' },
+            { id: 'description', name: 'Descrição' },
+            { id: 'type_trucker', name: 'Tipo do veículo' },
+            { id: 'type_wheelset', name: 'Tipo do veículo' },
+            { id: 'type_body', name: 'Tipo do veículo' },
+            { id: 'type_owner', name: 'Tipo do veículo' },
+            { id: 'weight', name: 'Peso' },
+            { id: 'capacity', name: 'Capacidade' },
+            { id: 'rntrc', name: 'RNTRC' },
+
+
             { id: 'v_cbs', name: 'Valor CBSe' },
             { id: 'v_ibs', name: 'Valor IBS' }
         ];
@@ -345,41 +369,6 @@ function fazerLogin() {
         });
 }
 
-// Cadastro de Motorista
-function cadastrarMotorista() {
-    if (!validateConfig("driver")) {
-        return;
-    }
-
-    showNotification('🚀 Iniciando cadastro de motorista...', 'info');
-
-    // Obter dados atuais do frontend
-    const driverData = {
-        cpf: document.getElementById('driver_cpf').value,
-        name: document.getElementById('driver_name').value
-    };
-
-    // Enviar requisição para executar o cadastro de motorista com os dados atuais
-    fetch('/api/cadastro-motorista', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(driverData)
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
-            } else {
-                showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            showNotification('❌ Erro de conexão com o servidor', 'error');
-        });
-}
 
 // Registrar Destinatário
 function registrarDestinatario() {
@@ -433,16 +422,85 @@ function registrarDestinatario() {
         });
 }
 
+// Cadastro de Motorista
+function cadastrarMotorista() {
+    if (!validateConfig("driver")) {
+        return;
+    }
+
+    showNotification('🚀 Iniciando cadastro de motorista...', 'info');
+
+    // Obter dados atuais do frontend
+    const driverData = {
+        cpf: document.getElementById('driver_cpf').value,
+        name: document.getElementById('driver_name').value
+    };
+
+    // Enviar requisição para executar o cadastro de motorista com os dados atuais
+    fetch('/api/cadastro-motorista', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(driverData)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
+            } else {
+                showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification('❌ Erro de conexão com o servidor', 'error');
+        });
+}
+
+
 // Cadastro de Caminhão
 function cadastrarCaminhao() {
+    // if (!validateConfig("truck")) {
+    //     return;
+    // }
     showNotification('🚀 Iniciando cadastro de caminhão...', 'info');
 
-    // Aqui você pode adicionar a lógica para abrir o formulário de cadastro
-    // ou redirecionar para a página de cadastro de caminhão
+    const truckData = {
+        type_wheelset: document.getElementById('type_wheelset').value,
+        type_body: document.getElementById('type_body').value,
+        type_owner: document.getElementById('type_owner').value,
+        plate: document.getElementById('plate').value,
+        trucker_uf: document.getElementById('trucker_uf').value,
+        description: document.getElementById("description").value,
+        type_trucker: document.getElementById("type_trucker").value,
+        weight: document.getElementById("weight").value,
+        capacity: document.getElementById("capacity").value,
+        rntrc: document.getElementById("rntrc").value,
 
-    setTimeout(() => {
-        showNotification(' Formulário de caminhão pronto para preenchimento', 'success');
-    }, 1000);
+    };
+
+
+    // Enviar requisição para executar o cadastro de motorista com os dados atuais
+    fetch('/api/cadastro-caminhao', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(truckData)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
+            } else {
+                showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification('❌ Erro de conexão com o servidor', 'error');
+        });
 }
 
 // Criação de CTe
@@ -472,11 +530,11 @@ function criarCTE() {
             quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
             load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
             service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value),
-            type: document.getElementById('note_fiscal_type').value
+            type: document.getElementById('note_fiscal_type').value,
+            load_icms: document.getElementById('note_fiscal_load_icms').value
         },
-        taxes: {
-            vehicle: document.getElementById('vehicle').value,
-            Valor_ICMS: document.getElementById('valor_icms').value
+        trucker: {
+            plate: document.getElementById('plate').value,
         },
         docs: {
             access_key: accessKeys

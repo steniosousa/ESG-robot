@@ -22,10 +22,20 @@ let general_config = {
         load_service: '',
         type: "",
         service_recipient: '',
+        load_icms: "",
     },
-    taxes: {
-        vehicle: "",
-        Valor_ICMS: ""
+    trucker: {
+        plate: "",
+        trucker_uf: "",
+        description: "",
+        renavam: "",
+        type_trucker: "",
+        type_wheelset: "",
+        type_body: "",
+        type_owner: "",
+        weight: "",
+        capacity: "",
+        rntrc: ""
     },
     docs: {
         access_key: []
@@ -43,7 +53,6 @@ let browser: any = null;
 let page: any = null;
 let loadingMonitorInterval: any = null;
 
-// Sistema global de monitoramento de loading
 async function startGlobalLoadingMonitor() {
     if (loadingMonitorInterval) {
         clearInterval(loadingMonitorInterval);
@@ -88,7 +97,6 @@ async function startGlobalLoadingMonitor() {
     }, 500); // Aumentei para 500ms para reduzir carga
 }
 
-// Função de espera que respeita o sistema global
 async function waitForGlobalLoading(maxWaitTime: number = 30000) {
     const startTime = Date.now();
 
@@ -104,13 +112,7 @@ async function waitForGlobalLoading(maxWaitTime: number = 30000) {
     }
 }
 
-// Parar monitoramento quando necessário
-function stopLoadingMonitor() {
-    if (loadingMonitorInterval) {
-        clearInterval(loadingMonitorInterval);
-        loadingMonitorInterval = null;
-    }
-}
+
 let controlPage: any = null;
 
 let pendingPermission: { action: string; resolve: (value: boolean) => void } | null = null;
@@ -156,7 +158,7 @@ const creations = {
         await page.keyboard.press('Backspace');
 
         await page.locator(filterSelector).fill(cpf);
-        const responsePromise = await listerRequest('Gcadastro');
+        const responsePromise = listerRequest('Gcadastro');
         await page.keyboard.press('Enter');
 
         const response = await responsePromise;
@@ -184,10 +186,10 @@ const creations = {
 
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-        await timer()
+        const responsePromise = listerRequest('/odata/Gcadastro');
         await page.locator(filterSelector).fill(cpf_cnpj);
+        await page.keyboard.press('Enter');
 
-        const responsePromise = await listerRequest('/odata/Gcadastro');
         const response = await responsePromise;
         const responseData = await response.json();
         if (responseData.value && responseData.value.length === 0) {
@@ -199,13 +201,10 @@ const creations = {
                 const submitButton = '#butonConsultaCpfCnpj';
                 await page.waitForSelector(submitButton, { state: 'visible' });
                 await page.click(submitButton);
-                await listerRequest('GetCadastroReceiraFederal')
+                listerRequest('GetCadastroReceiraFederal')
                 await waitForGlobalLoading();
                 clearAndType("inscEstadual", insc_estadual);
 
-                await timer();
-                // await clearAndTypeByPlaceholder("Informe o endereço", rua);
-                // await clearAndTypeByPlaceholder("Informe o bairro", bairro);
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
@@ -217,9 +216,8 @@ const creations = {
                 const selector = 'input[ui-br-cep-mask]';
                 await page.locator(selector).fill(cep);
                 await waitForGlobalLoading();
+                listerRequest("GetCEP")
                 await page.click("#buttonCep");
-                await waitForGlobalLoading();
-                await listerRequest("GetCEP")
                 await waitForGlobalLoading();
                 clearAndType("INSCESTADUAL", insc_estadual);
                 await waitForGlobalLoading();
@@ -286,16 +284,16 @@ const creations = {
 
 
 
-        //page taxes
+        //page trucker
 
         await page.waitForSelector("input[name='valorRedBaseICMS']", { timeout: 10000 });
 
-        await clearAndSelectOption('IDVEICULO', general_config.taxes.vehicle);
+        await clearAndSelectOption('IDVEICULO', general_config.trucker.plate);
 
         await clearAndSelectOption("IDMOTORISTA", general_config.driver.cpf);
 
         await clearAndType('valorbcICMS', general_config.note_fiscal.service_recipient);
-        await clearAndType('valorIcms', general_config.taxes.Valor_ICMS);
+        await clearAndType('valorIcms', general_config.note_fiscal.load_icms);
 
         await page.click('li[id="documentos"]');
 
@@ -380,6 +378,31 @@ const creations = {
         await clearAndType('vIBSUF', general_config.tax_reform.Valor_IBS_UF_IBS);
         await timer()
         await clearAndType('vIBS', general_config.tax_reform.Valor_IBS_UF_IBS);
+    },
+    "create_trucker": async () => {
+        await page.goto("https://app.egssistemas.com.br/veiculo", { waitUntil: "domcontentloaded", timeout: 30000 });
+        await waitForGlobalLoading();
+
+        const filterSelector = 'td:nth-of-type(2) input[aria-label="Filtro de célula"]';
+        await page.waitForSelector(filterSelector, { visible: true });
+        await page.focus(filterSelector);
+        await page.click(filterSelector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+
+        const responsePromise = listerRequest('Gveiculo');
+        await page.locator(filterSelector).fill(general_config.trucker.plate);
+        await page.keyboard.press('Enter');
+        const response = await responsePromise;
+        const responseData = await response.json();
+        if (responseData.value && responseData.value.length === 0) {
+            await page.click("egs-button-new button");
+            await clearAndType("placa", general_config.trucker.plate);
+            await clearAndType("renavam", "00187995699");
+            await clearAndType("descricaoVeiculo", "SCANIA/T142 H 4X2");
+            await clearAndType("pesoVeiculo", "30000");
+            await clearAndType("capacidadeKg", "28000");
+            await clearAndType("RNTRC", "RNTRC");
+        }
     },
     "login": async () => {
 
@@ -483,6 +506,25 @@ function createControlServer() {
 
             await creations.create_driver();
             res.json({ success: true, message: 'Cadastro de motorista executado com sucesso' });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+            res.json({ success: false, message: errorMessage });
+        }
+    });
+
+    // Endpoint para cadastro de motorista
+    app.post('/api/cadastro-caminhao', async (req, res) => {
+        try {
+            if (!robotCanStart) {
+                return res.json({ success: false, message: 'Robô não está pronto para executar esta ação' });
+            }
+            const truckData = req.body;
+            console.log(truckData)
+            general_config.trucker = truckData;
+
+            await creations.create_trucker();
+            res.json({ success: true, message: 'Cadastro de caminhão executado com sucesso' });
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';

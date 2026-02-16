@@ -99,7 +99,7 @@
                 </div>
             </div>
 
-            <!-- Configurações de Destinatário -->
+            <!-- Configurações de Motorista -->
             <div class="config-subsection">
                 <h3>🛻 Motorista</h3>
                 <div class="form-grid">
@@ -126,6 +126,10 @@
                         <input type="number" id="note_fiscal_load_value" placeholder="Digite o valor">
                     </div>
                     <div class="form-group">
+                        <label>Valor do ICMS:</label>
+                        <input type="text" id="note_fiscal_load_icms" placeholder="Ex: 18,13">
+                    </div>
+                    <div class="form-group">
                         <label>Quantidade</label>
                         <input type="number" id="note_fiscal_quantity" placeholder="Digite a quantidade">
                     </div>
@@ -134,8 +138,9 @@
                         <input type="text" id="note_fiscal_type" placeholder="Digite o tipo">
                     </div>
                     <div class="form-group">
-                        <label >Valores Bases</label>
-                        <input type="number" id="note_fiscal_service_recipient" placeholder="Valor Serviço / B.C. ICMS / BC IBS/CBS" oninput="calcPercent()">
+                        <label>Valores Bases</label>
+                        <input type="number" id="note_fiscal_service_recipient"
+                            placeholder="Valor Serviço / B.C. ICMS / BC IBS/CBS" oninput="calcPercent()">
                     </div>
 
                 </div>
@@ -159,23 +164,71 @@
                 </div>
 
             </div>
-            <!-- Veículo e Motorista -->
+            <!-- Veículo -->
             <div class="config-subsection">
                 <h3>🚚 Veículo</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Placa do veículo:</label>
-                        <input type="text" id="vehicle" placeholder="Ex: ABZ0A56">
+                        <input type="text" id="plate" placeholder="Ex: ABZ0A56">
+                    </div>
+                    <div class="form-group">
+                        <label>UF da placa:</label>
+                        <input type="text" id="trucker_uf" placeholder="Ex: SP">
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição:</label>
+                        <input type="text" id="description" placeholder="Ex: SP">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Renavam:</label>
+                        <input type="text" id="renavam" placeholder="Ex: SP">
                     </div>
 
 
                     <div class="form-group">
-                        <label>Valor do ICMS:</label>
-                        <input type="text" id="valor_icms" placeholder="Ex: 18,13">
+                        <label>Tipo do veiculo:</label>
+                        <input type="text" id="type_trucker" placeholder="Ex: SP">
                     </div>
+
+
+                    <div class="form-group">
+                        <label>Tipo de rodado:</label>
+                        <input type="text" id="type_wheelset" placeholder="Ex: SP">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Tipo do carroceria:</label>
+                        <input type="text" id="type_body" placeholder="Ex: SP">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tipo do proprietário:</label>
+                        <input type="text" id="type_owner" placeholder="Ex: SP">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Peso:</label>
+                        <input type="text" id="weight" placeholder="Ex: SP">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Capacidade:</label>
+                        <input type="text" id="capacity" placeholder="Ex: SP">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>RNTRC:</label>
+                        <input type="text" id="rntrc" placeholder="Ex: SP">
+                    </div>
+
                 </div>
             </div>
-
 
             <!-- Reforma Tributária -->
             <div class="config-subsection">
