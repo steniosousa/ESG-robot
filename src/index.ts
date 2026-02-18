@@ -35,7 +35,16 @@ let general_config = {
         type_owner: "",
         weight: "",
         capacity: "",
-        rntrc: ""
+        rntrc: "",
+        owner: {
+            cpf_cnpj: '00.000.000/0001-91',
+            razao_social: '',
+            cep: '',
+            insc_estadual: '123456789',
+            numero: '',
+            rua: '',
+            bairro: ''
+        },
     },
     docs: {
         access_key: []
@@ -104,28 +113,42 @@ function requestPermission(action: string): Promise<boolean> {
 
 async function listerRequest(includes: string, expectedValue: string) {
     return await page.waitForResponse((res: any) => {
-        const url = res.url();
+        const urlRaw = res.url();
         const method = res.request().method();
-        const postData = res.request().postData() || "";
 
-
-        // 1. Ignora Preflight e foca no que importa (URL contém o nome da API)
-        if (method === 'OPTIONS' || !url.includes(includes)) {
+        // Ignora OPTIONS e URLs que não batem com o "includes"
+        if (method === 'OPTIONS' || !urlRaw.includes(includes)) {
             return false;
         }
 
-        /**
-         * 2. Validação do Dado (Payload ou QueryString)
-         * - .toLowerCase() ajuda a evitar erros de caixa alta/baixa
-         * - Checamos na URL (se for GET) ou no postData (se for POST)
-         */
-        const valueInUrl = url.toLowerCase().includes(expectedValue.toLowerCase());
-        const valueInBody = postData.toLowerCase().includes(expectedValue.toLowerCase());
+        const postData = res.request().postData() || "";
 
-        return valueInUrl || valueInBody;
+        // 1. Decodifica a URL (Transforma %2F em /)
+        const urlDecoded = decodeURIComponent(urlRaw);
+
+        // 2. Prepara o valor esperado (minúsculo)
+        const lowerExpected = expectedValue.toLowerCase();
+
+        // 3. Versão do valor apenas com números (caso a API limpe os pontos)
+        const cleanValue = expectedValue.replace(/\D/g, "");
+
+        // COMPARAÇÃO:
+        // Verificamos na URL decodificada para aceitar a barra "/"
+        // Verificamos na URL bruta caso o valor passado já esteja codificado
+        // Verificamos apenas números por segurança
+        const match =
+            urlDecoded.toLowerCase().includes(lowerExpected) ||
+            urlRaw.toLowerCase().includes(lowerExpected) ||
+            urlRaw.includes(cleanValue) ||
+            postData.toLowerCase().includes(lowerExpected);
+
+        if (match) {
+            console.log(`Requisição capturada para: ${expectedValue}`);
+        }
+
+        return match;
     }, { timeout: 15000 });
 }
-
 
 const creations = {
     "create_driver": async () => {
@@ -135,6 +158,8 @@ const creations = {
             waitUntil: "networkidle2",
             timeout: 30000
         });
+        await timer()
+
         const responsePromise = listerRequest('Gcadastro', cpf);
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula"]';
@@ -155,17 +180,16 @@ const creations = {
             await clearAndType("RAZAOSOCIAL", name);
         }
     },
-    "create_destination": async () => {
-        const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = general_config.destination;
+    "create_destination": async (owner?: boolean) => {
+        const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = owner ? general_config.trucker.owner : general_config.destination;
 
         await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
             waitUntil: "networkidle2",
             timeout: 30000
         });
+        await timer()
 
-        console.log(cpf_cnpj)
         const responsePromise = listerRequest('Gcadastro', cpf_cnpj);
-
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
         await page.waitForSelector(filterSelector, { visible: true });
@@ -176,14 +200,19 @@ const creations = {
 
         const response = await responsePromise;
         const responseData = await response.json();
+        await timer()
         if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
             clearAndType("cpfCnpj", cpf_cnpj);
+            await timer()
             if (cpf_cnpj.length === 18) {
-                const submitButton = '#butonConsultaCpfCnpj';
-                await page.waitForSelector(submitButton, { state: 'visible' });
+                const submitButton = 'span[id=butonConsultaCpfCnpj]';
+                await page.waitForSelector(submitButton);
                 await page.click(submitButton);
+                await timer()
                 listerRequest('GetCadastroReceiraFederal', cpf_cnpj)
+                await responsePromise;
+                await response.json();
                 clearAndType("inscEstadual", insc_estadual);
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
@@ -197,10 +226,11 @@ const creations = {
 
                 listerRequest("GetCEP", cep)
                 await page.click("#buttonCep");
+                await timer();
 
                 clearAndType("INSCESTADUAL", insc_estadual);
-
                 await timer();
+
                 await clearAndTypeByPlaceholder("Ex.: 000", numero);
                 await clearAndTypeByPlaceholder("Informe o endereço", rua);
                 await clearAndTypeByPlaceholder("Informe o bairro", bairro);
@@ -215,8 +245,6 @@ const creations = {
                 if (valorInscricao !== insc_estadual) {
                     await page.locator('input[name="INSCESTADUAL"]').fill(insc_estadual);
                     await timer();
-                } else {
-                    console.log(`✅ Campo INSCESTADUAL preenchido corretamente: ${valorInscricao}`);
                 }
 
                 clearAndType("RAZAOSOCIAL", razao_social);
@@ -332,8 +360,6 @@ const creations = {
 
             if (rowCheckboxes.length > 0) {
                 rowCheckboxes.forEach(cb => cb.click());
-            } else {
-                console.warn("Nenhuma linha encontrada para selecionar.");
             }
         });
 
@@ -360,43 +386,45 @@ const creations = {
     },
     "create_trucker": async () => {
         await page.goto("https://app.egssistemas.com.br/veiculo", { waitUntil: "domcontentloaded", timeout: 30000 });
-        const responsePromise = listerRequest('Gveiculo', 'ABZ0A57');
+        const responsePromise = listerRequest('Gveiculo', general_config.trucker.plate);
         const filterSelector = 'td:nth-of-type(2) input[aria-label="Filtro de célula"]';
         await page.waitForSelector(filterSelector, { visible: true });
         await page.focus(filterSelector);
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-        await page.locator(filterSelector).fill('ABZ0A57');
+        await page.locator(filterSelector).fill("ABZ0A57");
         await page.keyboard.press('Enter');
         const response = await responsePromise;
         const responseData = await response.json();
         if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
-            await clearAndType("placa", 'ABZ0A57');
+            // await clearAndType("placa", general_config.trucker.plate);
+            // await timer()
+            // await clearAndType("renavam", general_config.trucker.renavam);
+            // await timer()
+            // await clearAndType("descricaoVeiculo", general_config.trucker.description);
+            // await timer()
+            // await clearAndType("pesoVeiculo", general_config.trucker.weight);
+            // await timer()
+            // await clearAndType("capacidadeKg", general_config.trucker.capacity);
+            // await timer()
+            // await clearAndType("RNTRC", general_config.trucker.rntrc);
+            // await timer()
+            // await findAndSelectOption("ufPlaca", general_config.trucker.trucker_uf);
+            // await timer()
+            // await findAndSelectOption("tipoVeiculo", general_config.trucker.type_trucker);
+            // await timer()
+            // await findAndSelectOption("tipoRodado", general_config.trucker.type_wheelset);
+            // await timer()
+            // await findAndSelectOption("tipoCarroceria", general_config.trucker.type_body)
+            // await timer()
+            // await findAndSelectOption("tipoProprietario", general_config.trucker.type_owner)
+            // await timer()
+            await findAndSelectOption("propVeiculo", "00.000.000/0001-91")
             await timer()
-            await clearAndType("renavam", "00187995699");
-            await timer()
-            await clearAndType("descricaoVeiculo", "SCANIA/T142 H 4X2");
-            await timer()
-            await clearAndType("pesoVeiculo", "30000");
-            await timer()
-            await clearAndType("capacidadeKg", "28000");
-            await timer()
-            await clearAndType("RNTRC", "RNTRC");
-            await timer()
-            await findAndSelectOption("ufPlaca", "CEARA");
-            await timer()
-            await findAndSelectOption("tipoVeiculo", "Reboque");
-            await timer()
-            await findAndSelectOption("tipoRodado", "Outros");
-            await timer()
-            await findAndSelectOption("tipoCarroceria", "Aberta")
-            await timer()
-            await findAndSelectOption("propVeiculo", "19.293.342/0001-75")
-            await timer()
-            await findAndSelectOption("tipoProprietario", "Outros")
         }
     },
+
     "login": async () => {
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
@@ -428,6 +456,8 @@ const creations = {
         await creations.create_cte()
     }
 }
+
+
 async function findAndSelectOption(placeholder: string, value: string) {
     const selectors: Record<string, string> = {
         "tipoVeiculo": "egs-cte-tipo-veiculo",
@@ -442,40 +472,50 @@ async function findAndSelectOption(placeholder: string, value: string) {
     if (!containerTag) return;
 
     const inputSelector = `${containerTag} input.form-control:not([type="hidden"])`;
-    const listSelector = `${containerTag} .box-select-text`;
     const itemSelector = `${containerTag} ul.keydownRows`;
+    const notFoundSelector = `${containerTag} .mgs-select`; // Div "Pesquisa não encontrada"
+    const btnAddSelector = `${containerTag} .mgs-select button`; // Botão "+ Adicionar"
 
     try {
         await page.waitForSelector(inputSelector, { visible: true });
-        await page.click(inputSelector, { clickCount: 3 });
-        await page.keyboard.press('Backspace');
-        await page.type(inputSelector, value, { delay: 50 });
+        await page.locator(inputSelector).fill(value);
+
+        // 2. Aguarda o loading sumir
         await page.waitForFunction((tag: string) => {
             const loader = document.querySelector(`${tag} .bg-box-select-text`);
             return !loader || loader.classList.contains('ng-hide');
         }, { timeout: 10000 }, containerTag);
-        await page.waitForSelector(itemSelector, { visible: true, timeout: 5000 });
 
+        // 3. Verifica se apareceu "Pesquisa não encontrada"
+        // Esperamos um pouco para o Angular renderizar a div de erro ou a lista
+        await timer()
+        const isNotFound = await page.evaluate((sel: string) => {
+            const el = document.querySelector(sel);
+            // Verifica se o elemento existe e NÃO está escondido (não tem ng-hide)
+            return el && !el.classList.contains('ng-hide');
+        }, notFoundSelector);
+
+        if (isNotFound) {
+            console.log(`Valor ${value} não encontrado. Clicando em Adicionar Novo...`);
+            await creations.create_destination(true)
+            // await creations.create_trucker()
+            return;
+        }
+
+        // 4. Se encontrou, seleciona via teclado
         if (placeholder === "propVeiculo") {
-            await timer()
             await page.focus(inputSelector);
             await page.keyboard.press('ArrowDown');
             await page.keyboard.press('Enter');
-            
         } else {
             const items = await page.$$(itemSelector);
-            if (items.length > 0) {
-                await items[0].click();
-            }
+            if (items.length > 0) await items[0].click();
         }
-
-        await new Promise(r => setTimeout(r, 1000));
-
+        await timer()
     } catch (error: any) {
         console.error(`Erro no campo ${placeholder}:`, error.message);
     }
 }
-
 
 function createControlServer() {
     const app = express();
@@ -523,7 +563,6 @@ function createControlServer() {
             await creations.login()
             res.json({ success: true, message: 'Login executado com sucesso' });
         } catch (error) {
-            console.error('❌ Erro no login:', error);
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
             res.json({ success: false, message: errorMessage });
         }
@@ -587,7 +626,6 @@ function createControlServer() {
             res.json({ success: true, message: 'Registro de destinatário executado com sucesso' });
 
         } catch (error) {
-            console.error('❌ Erro no registro de destinatário:', error);
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
             res.json({ success: false, message: errorMessage });
         }
@@ -605,7 +643,6 @@ function createControlServer() {
             res.json({ success: true, message: 'CTe criado com sucesso' });
 
         } catch (error) {
-            console.error('❌ Erro no registro de destinatário:', error);
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
             res.json({ success: false, message: errorMessage });
         }
@@ -680,6 +717,7 @@ async function clearAndType(name: string, value: string) {
 
     await page.waitForSelector(selector, { timeout: 1000 });
     await page.locator(selector).fill(value);
+    await timer()
 }
 
 const timer = async () => {
