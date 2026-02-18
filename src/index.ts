@@ -44,7 +44,7 @@ let general_config = {
         Valor_CBS: "",
         Valor_IBS_UF_IBS: ""
     },
-    timerDuration: 2
+    timerDuration: 1
 }
 
 let isPaused = false;
@@ -52,6 +52,11 @@ let shouldStop = false;
 let browser: any = null;
 let page: any = null;
 let loadingMonitorInterval: any = null;
+let controlPage: any = null;
+
+let pendingPermission: { action: string; resolve: (value: boolean) => void } | null = null;
+let permissionRequests: Array<{ action: string; timestamp: number }> = [];
+let robotCanStart = false;
 
 async function startGlobalLoadingMonitor() {
     if (loadingMonitorInterval) {
@@ -70,23 +75,13 @@ async function startGlobalLoadingMonitor() {
                     style.visibility !== 'hidden' &&
                     style.opacity !== '0';
 
-                // Log adicional para debug
-                if (isVisible) {
-                    console.log('🔍 Loading ainda visível:', {
-                        display: style.display,
-                        visibility: style.visibility,
-                        opacity: style.opacity
-                    });
-                }
 
                 return isVisible;
             });
 
             if (isLoading && !isPaused) {
-                console.log("⏸️ Loading detectado! Pausando execução...");
                 isPaused = true;
             } else if (!isLoading && isPaused) {
-                console.log("▶️ Loading sumiu! Retomando execução...");
                 isPaused = false;
             }
         } catch (error: any) {
@@ -96,28 +91,6 @@ async function startGlobalLoadingMonitor() {
         }
     }, 500); // Aumentei para 500ms para reduzir carga
 }
-
-async function waitForGlobalLoading(maxWaitTime: number = 30000) {
-    const startTime = Date.now();
-
-    while (isPaused) {
-
-        // Verifica se excedeu o tempo máximo
-        if (Date.now() - startTime > maxWaitTime) {
-            isPaused = false;
-            break;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 200));
-    }
-}
-
-
-let controlPage: any = null;
-
-let pendingPermission: { action: string; resolve: (value: boolean) => void } | null = null;
-let permissionRequests: Array<{ action: string; timestamp: number }> = [];
-let robotCanStart = false;
 
 function requestPermission(action: string): Promise<boolean> {
     return new Promise((resolve) => {
@@ -129,14 +102,31 @@ function requestPermission(action: string): Promise<boolean> {
     });
 }
 
-async function listerRequest(includes: string) {
-    const responsePromise = page.waitForResponse((res: any) => {
-        const matchesUrl = res.url().includes(`${includes}`);
-        const isNotPreflight = res.request().method() !== 'OPTIONS';
-        return matchesUrl && isNotPreflight;
-    }, { timeout: 10000 });
-    return responsePromise;
+async function listerRequest(includes: string, expectedValue: string) {
+    return await page.waitForResponse((res: any) => {
+        const url = res.url();
+        const method = res.request().method();
+        const postData = res.request().postData() || "";
+
+
+        // 1. Ignora Preflight e foca no que importa (URL contém o nome da API)
+        if (method === 'OPTIONS' || !url.includes(includes)) {
+            return false;
+        }
+
+        /**
+         * 2. Validação do Dado (Payload ou QueryString)
+         * - .toLowerCase() ajuda a evitar erros de caixa alta/baixa
+         * - Checamos na URL (se for GET) ou no postData (se for POST)
+         */
+        const valueInUrl = url.toLowerCase().includes(expectedValue.toLowerCase());
+        const valueInBody = postData.toLowerCase().includes(expectedValue.toLowerCase());
+
+        return valueInUrl || valueInBody;
+    }, { timeout: 15000 });
 }
+
+
 const creations = {
     "create_driver": async () => {
         const { cpf, name } = general_config.driver;
@@ -145,6 +135,7 @@ const creations = {
             waitUntil: "networkidle2",
             timeout: 30000
         });
+        const responsePromise = listerRequest('Gcadastro', cpf);
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula"]';
         await page.waitForSelector(filterSelector, { visible: true });
@@ -153,7 +144,6 @@ const creations = {
         await page.keyboard.press('Backspace');
 
         await page.locator(filterSelector).fill(cpf);
-        const responsePromise = listerRequest('Gcadastro');
         await page.keyboard.press('Enter');
 
         const response = await responsePromise;
@@ -173,13 +163,14 @@ const creations = {
             timeout: 30000
         });
 
-        await timer()
+        console.log(cpf_cnpj)
+        const responsePromise = listerRequest('Gcadastro', cpf_cnpj);
+
 
         const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
         await page.waitForSelector(filterSelector, { visible: true });
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-        const responsePromise = listerRequest('/odata/Gcadastro');
         await page.locator(filterSelector).fill(cpf_cnpj);
         await page.keyboard.press('Enter');
 
@@ -192,7 +183,7 @@ const creations = {
                 const submitButton = '#butonConsultaCpfCnpj';
                 await page.waitForSelector(submitButton, { state: 'visible' });
                 await page.click(submitButton);
-                listerRequest('GetCadastroReceiraFederal')
+                listerRequest('GetCadastroReceiraFederal', cpf_cnpj)
                 clearAndType("inscEstadual", insc_estadual);
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
@@ -203,12 +194,12 @@ const creations = {
             else {
                 const selector = 'input[ui-br-cep-mask]';
                 await page.locator(selector).fill(cep);
-                
-                listerRequest("GetCEP")
+
+                listerRequest("GetCEP", cep)
                 await page.click("#buttonCep");
-                
+
                 clearAndType("INSCESTADUAL", insc_estadual);
-                
+
                 await timer();
                 await clearAndTypeByPlaceholder("Ex.: 000", numero);
                 await clearAndTypeByPlaceholder("Informe o endereço", rua);
@@ -233,7 +224,7 @@ const creations = {
                 await timer();
                 await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
                 await page.click("li[id=dadosAdicionais]");
-                
+
                 await clearAndSelectOption('contribuinteIcms', "1")
                 await clearAndSelectOption('consumidorFinal', "0")
             }
@@ -246,7 +237,7 @@ const creations = {
     },
     "create_cte": async () => {
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
-        
+
 
         const canClickCopy = await requestPermission("Clicar no botão copiar");
 
@@ -369,35 +360,46 @@ const creations = {
     },
     "create_trucker": async () => {
         await page.goto("https://app.egssistemas.com.br/veiculo", { waitUntil: "domcontentloaded", timeout: 30000 });
-        
-
+        const responsePromise = listerRequest('Gveiculo', 'ABZ0A57');
         const filterSelector = 'td:nth-of-type(2) input[aria-label="Filtro de célula"]';
         await page.waitForSelector(filterSelector, { visible: true });
         await page.focus(filterSelector);
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-
-        const responsePromise = listerRequest('Gveiculo');
-        await page.locator(filterSelector).fill(general_config.trucker.plate);
+        await page.locator(filterSelector).fill('ABZ0A57');
         await page.keyboard.press('Enter');
         const response = await responsePromise;
         const responseData = await response.json();
         if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
-            await clearAndType("placa", general_config.trucker.plate);
+            await clearAndType("placa", 'ABZ0A57');
+            await timer()
             await clearAndType("renavam", "00187995699");
+            await timer()
             await clearAndType("descricaoVeiculo", "SCANIA/T142 H 4X2");
+            await timer()
             await clearAndType("pesoVeiculo", "30000");
+            await timer()
             await clearAndType("capacidadeKg", "28000");
+            await timer()
             await clearAndType("RNTRC", "RNTRC");
+            await timer()
+            await findAndSelectOption("ufPlaca", "CEARA");
+            await timer()
+            await findAndSelectOption("tipoVeiculo", "Reboque");
+            await timer()
+            await findAndSelectOption("tipoRodado", "Outros");
+            await timer()
+            await findAndSelectOption("tipoCarroceria", "Aberta")
+            await timer()
+            await findAndSelectOption("propVeiculo", "19.293.342/0001-75")
+            await timer()
+            await findAndSelectOption("tipoProprietario", "Outros")
         }
     },
     "login": async () => {
-
-
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
-        
         const hasCaptcha = await page.$(".g-recaptcha, iframe[src*=\"recaptcha\"], .captcha, [class*=\"captcha\"]") !== null;
 
         if (hasCaptcha) {
@@ -413,19 +415,67 @@ const creations = {
 
         await clearAndType('chaveAcesso', "50201");
 
+        await timer()
         const submitButton = 'button[type="submit"]';
         await page.waitForSelector(submitButton, { state: 'visible' });
         await page.click(submitButton);
 
     },
     "complete_route": async () => {
-
         await creations.login()
         await creations.create_driver()
         await creations.create_destination()
         await creations.create_cte()
     }
 }
+async function findAndSelectOption(placeholder: string, value: string) {
+    const selectors: Record<string, string> = {
+        "tipoVeiculo": "egs-cte-tipo-veiculo",
+        "tipoRodado": "egs-gveiculo-rodado",
+        "tipoCarroceria": "egs-gveiculo-carroceria",
+        "tipoProprietario": "egs-cte-tipo-proprietario",
+        "ufPlaca": "egs-gestado",
+        "propVeiculo": "egs-gcadastro"
+    };
+
+    const containerTag = selectors[placeholder];
+    if (!containerTag) return;
+
+    const inputSelector = `${containerTag} input.form-control:not([type="hidden"])`;
+    const listSelector = `${containerTag} .box-select-text`;
+    const itemSelector = `${containerTag} ul.keydownRows`;
+
+    try {
+        await page.waitForSelector(inputSelector, { visible: true });
+        await page.click(inputSelector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+        await page.type(inputSelector, value, { delay: 50 });
+        await page.waitForFunction((tag: string) => {
+            const loader = document.querySelector(`${tag} .bg-box-select-text`);
+            return !loader || loader.classList.contains('ng-hide');
+        }, { timeout: 10000 }, containerTag);
+        await page.waitForSelector(itemSelector, { visible: true, timeout: 5000 });
+
+        if (placeholder === "propVeiculo") {
+            await timer()
+            await page.focus(inputSelector);
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('Enter');
+            
+        } else {
+            const items = await page.$$(itemSelector);
+            if (items.length > 0) {
+                await items[0].click();
+            }
+        }
+
+        await new Promise(r => setTimeout(r, 1000));
+
+    } catch (error: any) {
+        console.error(`Erro no campo ${placeholder}:`, error.message);
+    }
+}
+
 
 function createControlServer() {
     const app = express();
@@ -447,7 +497,6 @@ function createControlServer() {
     // Endpoint para conceder permissão
     app.post('/api/grant-permission', (req, res) => {
         const { action, granted } = req.body;
-        console.log(`📝 Permissão para "${action}": ${granted ? 'CONCEDIDA' : 'NEGADA'}`);
 
         // Processar permissão pendente
         if (pendingPermission && pendingPermission.action === action) {
@@ -459,7 +508,6 @@ function createControlServer() {
         const requestIndex = permissionRequests.findIndex(req => req.action === action);
         if (requestIndex !== -1) {
             permissionRequests.splice(requestIndex, 1);
-            console.log(`🗑️ Permissão "${action}" removida do array. Restantes: ${permissionRequests.length}`);
         }
 
         res.json({ success: true });
@@ -508,7 +556,6 @@ function createControlServer() {
                 return res.json({ success: false, message: 'Robô não está pronto para executar esta ação' });
             }
             const truckData = req.body;
-            console.log(truckData)
             general_config.trucker = truckData;
 
             await creations.create_trucker();
@@ -537,7 +584,6 @@ function createControlServer() {
 
 
             await creations.create_destination();
-            console.log('✅ Registro de destinatário executado com sucesso');
             res.json({ success: true, message: 'Registro de destinatário executado com sucesso' });
 
         } catch (error) {
@@ -556,7 +602,6 @@ function createControlServer() {
             const cteData = req.body;
             general_config = cteData;
             await creations.create_cte();
-            console.log('✅ CTe criado com sucesso');
             res.json({ success: true, message: 'CTe criado com sucesso' });
 
         } catch (error) {
@@ -639,14 +684,11 @@ async function clearAndType(name: string, value: string) {
 
 const timer = async () => {
     for (let i = 0; i < general_config.timerDuration; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo por iteração
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 };
 
 async function clearAndSelectOption(name: string, value: string) {
-    
-    await timer();
-
     let wrapper =
         name === 'IDVEICULO'
             ? `egs-gveiculo[name="${name}"]` : `egs-gcadastro[name="${name}"]`;
