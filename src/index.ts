@@ -1,7 +1,6 @@
 import puppeteer from "puppeteer";
 import express from "express";
 import path from "path";
-import { cp } from "fs";
 
 let general_config = {
     driver: {
@@ -85,21 +84,22 @@ async function startGlobalLoadingMonitor() {
                     style.visibility !== 'hidden' &&
                     style.opacity !== '0';
 
-
                 return isVisible;
             });
 
             if (isLoading && !isPaused) {
                 isPaused = true;
+                console.log('🔄 Loading detectado - PAUSANDO TODAS AS OPERAÇÕES');
             } else if (!isLoading && isPaused) {
                 isPaused = false;
+                console.log('✅ Loading finalizado - RETOMANDO OPERAÇÕES');
             }
         } catch (error: any) {
             if (isPaused) {
                 isPaused = false;
             }
         }
-    }, 500); // Aumentei para 500ms para reduzir carga
+    }, 200); // Reduzi para 200ms para detectar mais rápido
 }
 
 function requestPermission(action: string): Promise<boolean> {
@@ -210,10 +210,11 @@ const creations = {
         if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
             await clearAndType("cpfCnpj", cpf);
+            await timer();
             await clearAndType("RAZAOSOCIAL", name);
         }
     },
-    "create_destination": async (owner?: boolean) => {
+    "create_destination": async (owner: boolean) => {
         try {
 
             const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = owner ? general_config.trucker.owner : general_config.destination;
@@ -255,8 +256,7 @@ const creations = {
                     const submitButton = 'span[id=butonConsultaCpfCnpj]';
                     await page.waitForSelector(submitButton);
                     await page.click(submitButton);
-                    const retorno = await listerRequestCNPJ('GetCadastroReceiraFederal', cpf_cnpj);
-                    console.log(retorno)
+                    await listerRequestCNPJ('GetCadastroReceiraFederal', cpf_cnpj);
                     clearAndType("inscEstadual", insc_estadual);
                     await timer();
                     await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
@@ -264,42 +264,42 @@ const creations = {
                     await clearAndSelectOption('contribuinteIcms', "1")
                     await clearAndSelectOption('consumidorFinal', "0")
                 }
-                // else {
-                //     const selector = 'input[ui-br-cep-mask]';
-                //     await page.locator(selector).fill(cep);
+                else {
+                    const selector = 'input[ui-br-cep-mask]';
+                    await page.locator(selector).fill(cep);
 
-                //     listerRequest("GetCEP", cep)
-                //     await page.click("#buttonCep");
-                //     await timer();
+                    listerRequest("GetCEP", cep)
+                    await page.click("#buttonCep");
+                    await timer();
 
-                //     clearAndType("INSCESTADUAL", insc_estadual);
-                //     await timer();
+                    clearAndType("INSCESTADUAL", insc_estadual);
+                    await timer();
 
-                //     await clearAndTypeByPlaceholder("Ex.: 000", numero);
-                //     await clearAndTypeByPlaceholder("Informe o endereço", rua);
-                //     await clearAndTypeByPlaceholder("Informe o bairro", bairro);
-                //     await timer();
-                //     await page.waitForSelector("input[name='INSCESTADUAL']", { timeout: 10000 });
+                    await clearAndTypeByPlaceholder("Ex.: 000", numero);
+                    await clearAndTypeByPlaceholder("Informe o endereço", rua);
+                    await clearAndTypeByPlaceholder("Informe o bairro", bairro);
+                    await timer();
+                    await page.waitForSelector("input[name='INSCESTADUAL']", { timeout: 10000 });
 
-                //     const valorInscricao = await page.evaluate(() => {
-                //         const input = document.querySelector('input[name="INSCESTADUAL"]') as HTMLInputElement;
-                //         return input ? input.value : '';
-                //     });
+                    const valorInscricao = await page.evaluate(() => {
+                        const input = document.querySelector('input[name="INSCESTADUAL"]') as HTMLInputElement;
+                        return input ? input.value : '';
+                    });
 
-                //     if (valorInscricao !== insc_estadual) {
-                //         await page.locator('input[name="INSCESTADUAL"]').fill(insc_estadual);
-                //         await timer();
-                //     }
+                    if (valorInscricao !== insc_estadual) {
+                        await page.locator('input[name="INSCESTADUAL"]').fill(insc_estadual);
+                        await timer();
+                    }
 
-                //     clearAndType("RAZAOSOCIAL", razao_social);
+                    clearAndType("RAZAOSOCIAL", razao_social);
 
-                //     await timer();
-                //     await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
-                //     await page.click("li[id=dadosAdicionais]");
+                    await timer();
+                    await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
+                    await page.click("li[id=dadosAdicionais]");
 
-                //     await clearAndSelectOption('contribuinteIcms', "1")
-                //     await clearAndSelectOption('consumidorFinal', "0")
-                // }
+                    await clearAndSelectOption('contribuinteIcms', "1")
+                    await clearAndSelectOption('consumidorFinal', "0")
+                }
             }
         } catch (er) {
             console.log(er)
@@ -465,7 +465,6 @@ const creations = {
             await findAndSelectOption("propVeiculo", "00.000.000/0001-91")
         }
     },
-
     "login": async () => {
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
@@ -488,13 +487,16 @@ const creations = {
     "complete_route": async () => {
         await creations.login()
         await creations.create_driver()
-        await creations.create_destination()
+        await creations.create_destination(false)
         await creations.create_cte()
     }
 }
 
 
 async function findAndSelectOption(placeholder: string, value: string) {
+    while (isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
     const selectors: Record<string, string> = {
         "tipoVeiculo": "egs-cte-tipo-veiculo",
         "tipoRodado": "egs-gveiculo-rodado",
@@ -686,7 +688,7 @@ function createControlServer() {
             general_config.destination.bairro = destinationData.bairro;
 
 
-            await creations.create_destination();
+            await creations.create_destination(false);
             res.json({ success: true, message: 'Registro de destinatário executado com sucesso' });
 
         } catch (error) {
@@ -758,6 +760,9 @@ async function openControlWindow() {
 }
 
 async function clearAndTypeByPlaceholder(placeholder: string, value: string) {
+    while (isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
     const selector = `input[placeholder="${placeholder}"]`;
     await page.waitForSelector(selector, { visible: true });
 
@@ -772,35 +777,25 @@ async function clearAndTypeByPlaceholder(placeholder: string, value: string) {
 }
 
 async function clearAndType(name: string, value: string) {
-    const selector = `input[name="${name}"]`;
+    // Aguarda se estiver pausado por loading
+    while (isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
-    // 1. Garante que o elemento está pronto
+    const selector = `input[name="${name}"]`;
     await page.waitForSelector(selector, { visible: true });
 
-    // 2. Limpeza agressiva
+    // 1. Foca e limpa o campo de forma agressiva
     await page.focus(selector);
     await page.click(selector, { clickCount: 3 });
     await page.keyboard.press('Backspace');
 
-    // 3. Digitação cadenciada (mais segura que .fill para campos com máscara)
-    // O delay de 20ms simula um humano e dá tempo para o script da página processar
-    await page.type(selector, String(value), { delay: 20 });
+    // 2. Digita com um delay de 50ms a 100ms entre as teclas
+    // Isso evita que o script de máscara do site se perca
+    await page.type(selector, String(value));
 
-    // 4. VALIDAÇÃO: Só sai da função quando o valor no DOM for igual ao desejado
-    // Isso "trava" o robô até que o campo esteja correto
-    await page.waitForFunction(
-        (sel: string, expectedValue: string) => {
-            const input = document.querySelector(sel) as HTMLInputElement;
-            // Removemos pontos e traços na comparação se for um campo numérico/mascarado
-            const cleanInput = input.value.replace(/\D/g, '');
-            const cleanExpected = expectedValue.replace(/\D/g, '');
-
-            return cleanInput === cleanExpected || input.value === expectedValue;
-        },
-        { timeout: 5000 }, // Tempo limite de 5 segundos para validar
-        selector,
-        value
-    );
+    // 3. Verifica se o foco não fugiu (opcional)
+    // Se o foco pulou antes da hora, você pode forçar o clique novamente
 }
 
 const timer = async () => {
@@ -810,6 +805,9 @@ const timer = async () => {
 };
 
 async function clearAndSelectOption(name: string, value: string) {
+    while (isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
     let wrapper =
         name === 'IDVEICULO'
             ? `egs-gveiculo[name="${name}"]` : `egs-gcadastro[name="${name}"]`;

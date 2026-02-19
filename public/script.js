@@ -247,15 +247,18 @@ document.addEventListener('DOMContentLoaded', function () {
 function validateConfig(type) {
     let requiredFields = [];
 
-    // Definir campos por tipo
     if (type === "driver") {
+        const element = document.getElementById("dest_cpf_cnpj");
+        if(element.value.length !== 14) {
+            showNotification('CPF do motorista deve ter 14 caracteres', 'error');
+            return false;
+        }
         requiredFields = [
             { id: 'driver_cpf', name: 'CPF Motorista' },
             { id: 'driver_name', name: 'Nome do Motorista' }
         ];
     } else if (type === "destination") {
         const element = document.getElementById("dest_cpf_cnpj");
-        console.log("dest_cpf_cnpj", element.value.length);
         if (element.value.length === 18) {
             requiredFields = [
                 { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
