@@ -1,10 +1,73 @@
-// Log inicial para verificar se o script está sendo executado
-console.log('🚀 [INIT] Script carregado!');
-
 let currentStatus = { isPaused: false, shouldStop: false, isRunning: false, permissionRequests: [] };
 let knownPermissions = new Set();
 let pendingPermissions = [];
 let accessKeys = [];
+
+function formatarCep(input) {
+    let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+
+    // Limita o comprimento máximo
+    if (value.length > 8) {
+        value = value.substring(0, 8);
+    }
+
+    // Formata CEP: XXXXX-XXX
+    if (value.length <= 5) {
+        value = value;
+    } else if (value.length <= 8) {
+        value = value.replace(/(\d{5})(\d{0,3})/, '$1-$2');
+    }
+
+    input.value = value;
+
+    // Se o CEP estiver completo (8 dígitos), busca automaticamente
+    if (value.length === 9) {
+        console.log(' [DEBUG] CEP completo, acionando busca automática:', value);
+        buscarCep(value);
+    }
+}
+
+async function buscarCep(cep) {
+    try {
+        // Remove caracteres não numéricos do CEP
+        const cepLimpo = cep.replace(/\D/g, '');
+        console.log(cepLimpo.length,"oi")
+
+        if (cepLimpo.length !== 8) {
+            showNotification('CEP deve ter 8 dígitos', 'error');
+            return;
+        }
+
+        showNotification('🔍 Buscando CEP...', 'info');
+        
+        // API ViaCEP (gratuita e confiável)
+        const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        
+        console.log(response)
+        if (!response.ok) {
+            showNotification('Erro ao buscar CEP', 'error');
+            return;
+        }
+
+        const dados = await response.json();
+        
+        if (dados.erro) {
+            showNotification('CEP não encontrado', 'error');
+            return;
+        }
+
+        // Preenche os campos com os dados retornados
+        document.getElementById('dest_cep').value = dados.cep;
+        document.getElementById('dest_rua').value = dados.logradouro || '';
+        document.getElementById('dest_bairro').value = dados.bairro || '';
+        document.getElementById('dest_cidade').value = dados.localidade || '';
+        
+        showNotification('✅ Endereço preenchido automaticamente!', 'success');
+        
+    } catch (error) {
+        showNotification('Erro ao buscar CEP', 'error');
+    }
+}
 
 function formatarCpfCnpj(input) {
     let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
@@ -60,10 +123,8 @@ setInterval(updateStatus, 1000); // Reduzido para 1 segundo
 
 async function updateStatus() {
     try {
-        console.log('🔍 [DEBUG] Atualizando status...');
         const response = await fetch('/api/status', { method: 'GET' });
         const status = await response.json();
-        console.log('🔍 [DEBUG] Status recebido:', status);
         currentStatus = status;
 
         checkNewPermissions(status.permissionRequests || []);
@@ -73,7 +134,6 @@ async function updateStatus() {
 }
 
 function checkNewPermissions(permissionRequests) {
-    console.log('🔍 [DEBUG] Verificando novas permissões...');
     permissionRequests.forEach(request => {
         const permissionKey = `${request.action}-${request.timestamp}`;
         if (!knownPermissions.has(permissionKey)) {
@@ -104,8 +164,6 @@ function updatePermissionsList() {
     const permissionsDiv = document.getElementById('permissions');
     const permissionsList = document.getElementById('permissions-list');
 
-    console.log('🔍 [DEBUG] updatePermissionsList chamado. pendingPermissions:', pendingPermissions.length);
-
     if (pendingPermissions.length === 0) {
         permissionsDiv.style.display = 'none';
         return;
@@ -115,7 +173,6 @@ function updatePermissionsList() {
     permissionsList.innerHTML = '';
 
     pendingPermissions.forEach(permission => {
-        console.log('🔍 [DEBUG] Adicionando permissão:', permission);
         const permissionItem = document.createElement('div');
         permissionItem.className = 'permission-item';
         permissionItem.innerHTML = `
@@ -130,7 +187,6 @@ function updatePermissionsList() {
                     </div>
                 `;
         permissionsList.appendChild(permissionItem);
-        console.log('🔍 [DEBUG] Botão adicionado ao DOM');
     });
 }
 

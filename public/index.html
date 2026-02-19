@@ -74,7 +74,7 @@
                     </div>
                     <div class="form-group">
                         <label>CEP</label>
-                        <input type="text" id="dest_cep" placeholder="Digite o CEP">
+                        <input type="text" id="dest_cep" placeholder="Digite o CEP" oninput="formatarCep(this)" maxlength="9">
                     </div>
                     <div class="form-group">
                         <label>Inscrição Estadual</label>
@@ -172,7 +172,7 @@
                         <label>Placa do veículo:</label>
                         <input type="text" id="plate" placeholder="Ex: ABZ0A57">
                     </div>
-                    
+
                     <div class="form-group">
                         <label>UF da placa:</label>
                         <input type="text" id="trucker_uf" placeholder="Ex: SP">
@@ -255,12 +255,8 @@
                     <input type="number" id="timer_duration" value="2" min="2" max="60">
                 </div>
             </div>
-
-
         </div>
     </div>
-
-
 </body>
 
 </html>
