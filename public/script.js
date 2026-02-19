@@ -478,7 +478,7 @@ function cadastrarCaminhao() {
         capacity: document.getElementById("capacity").value,
         rntrc: document.getElementById("rntrc").value,
         owner: {
-            cpf_cnpj: '00.000.000/0001-91',
+            cpf_cnpj: '33.041.260/0652-90',
             razao_social: '',
             cep: '',
             insc_estadual: '123456789',

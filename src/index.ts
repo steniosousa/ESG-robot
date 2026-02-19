@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer";
 import express from "express";
 import path from "path";
+import { cp } from "fs";
 
 let general_config = {
     driver: {
@@ -37,7 +38,7 @@ let general_config = {
         capacity: "",
         rntrc: "",
         owner: {
-            cpf_cnpj: '00.000.000/0001-91',
+            cpf_cnpj: '33.041.260/0652-90',
             razao_social: '',
             cep: '',
             insc_estadual: '123456789',
@@ -150,6 +151,38 @@ async function listerRequest(includes: string, expectedValue: string) {
     }, { timeout: 15000 });
 }
 
+async function listerRequestCNPJ(includes: string, expectedValue: string) {
+    console.log(`Aguardando resposta da API para: ${expectedValue}...`);
+
+    const response = await page.waitForResponse(async (res: any) => {
+        const urlRaw = res.url();
+        const method = res.request().method();
+
+        // 1. Filtro básico: Método e se a URL contém o endpoint (ex: "GetCadastroReceiraFederal")
+        if (method !== 'GET' || !urlRaw.includes(includes)) {
+            return false;
+        }
+
+        // 2. Limpeza para comparação (Remove pontos/traços do CNPJ esperado)
+        const cleanValue = expectedValue.replace(/\D/g, "");
+        const urlDecoded = decodeURIComponent(urlRaw);
+
+        // 3. Verifica se o CNPJ limpo está na URL
+        const isMatch = urlRaw.includes(cleanValue) || urlDecoded.includes(cleanValue);
+
+        if (isMatch) {
+            console.log(`✅ Requisição detectada: ${urlRaw}`);
+            // Opcional: Verificar se o status é 200
+            return res.status() === 200;
+        }
+
+        return false;
+    }, { timeout: 20000 });
+
+    // Retorna o JSON da resposta para você usar os dados se quiser
+    return await response.json();
+}
+
 const creations = {
     "create_driver": async () => {
         const { cpf, name } = general_config.driver;
@@ -181,86 +214,95 @@ const creations = {
         }
     },
     "create_destination": async (owner?: boolean) => {
-        const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = owner ? general_config.trucker.owner : general_config.destination;
+        try {
 
-        await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
-            waitUntil: "networkidle2",
-            timeout: 30000
-        });
-        await timer()
+            const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = owner ? general_config.trucker.owner : general_config.destination;
 
-        const responsePromise = listerRequest('Gcadastro', cpf_cnpj);
-
-        const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
-        await page.waitForSelector(filterSelector, { visible: true });
-        await page.click(filterSelector, { clickCount: 3 });
-        await page.keyboard.press('Backspace');
-        await page.locator(filterSelector).fill(cpf_cnpj);
-        await page.keyboard.press('Enter');
-
-        const response = await responsePromise;
-        const responseData = await response.json();
-        await timer()
-        if (responseData.value && responseData.value.length === 0) {
-            await page.click("egs-button-new button");
-            clearAndType("cpfCnpj", cpf_cnpj);
+            await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
+                waitUntil: "networkidle2",
+                timeout: 30000
+            });
             await timer()
-            if (cpf_cnpj.length === 18) {
-                const submitButton = 'span[id=butonConsultaCpfCnpj]';
-                await page.waitForSelector(submitButton);
-                await page.click(submitButton);
+
+            const responsePromise = listerRequest('Gcadastro', cpf_cnpj);
+
+            const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
+            await page.waitForSelector(filterSelector, { visible: true });
+            await page.click(filterSelector, { clickCount: 3 });
+            await page.keyboard.press('Backspace');
+            await timer();
+            await page.locator(filterSelector).fill(cpf_cnpj);
+            await page.keyboard.press('Enter');
+
+            const response = await responsePromise;
+            const responseData = await response.json();
+            await timer()
+            if (responseData.value && responseData.value.length === 0) {
+                await page.click("egs-button-new button");
                 await timer()
-                listerRequest('GetCadastroReceiraFederal', cpf_cnpj)
-                await responsePromise;
-                await response.json();
-                clearAndType("inscEstadual", insc_estadual);
-                await timer();
-                await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
-                await page.click("li[id=dadosAdicionais]");
-                await clearAndSelectOption('contribuinteIcms', "1")
-                await clearAndSelectOption('consumidorFinal', "0")
-            }
-            else {
-                const selector = 'input[ui-br-cep-mask]';
-                await page.locator(selector).fill(cep);
+                await timer()
+                await timer()
+                clearAndType("cpfCnpj", cpf_cnpj);
+                await timer()
+                await timer()
+                await timer()
 
-                listerRequest("GetCEP", cep)
-                await page.click("#buttonCep");
-                await timer();
-
-                clearAndType("INSCESTADUAL", insc_estadual);
-                await timer();
-
-                await clearAndTypeByPlaceholder("Ex.: 000", numero);
-                await clearAndTypeByPlaceholder("Informe o endereço", rua);
-                await clearAndTypeByPlaceholder("Informe o bairro", bairro);
-                await timer();
-                await page.waitForSelector("input[name='INSCESTADUAL']", { timeout: 10000 });
-
-                const valorInscricao = await page.evaluate(() => {
-                    const input = document.querySelector('input[name="INSCESTADUAL"]') as HTMLInputElement;
-                    return input ? input.value : '';
-                });
-
-                if (valorInscricao !== insc_estadual) {
-                    await page.locator('input[name="INSCESTADUAL"]').fill(insc_estadual);
+                await timer()
+                await timer()
+                await timer()
+                console.log(cpf_cnpj.length)
+                if (cpf_cnpj.length === 18) {
+                    const submitButton = 'span[id=butonConsultaCpfCnpj]';
+                    await page.waitForSelector(submitButton);
+                    await page.click(submitButton);
+                    const retorno = await listerRequestCNPJ('GetCadastroReceiraFederal', cpf_cnpj);
+                    console.log(retorno)
+                    clearAndType("inscEstadual", insc_estadual);
                     await timer();
+                    await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
+                    await page.click("li[id=dadosAdicionais]");
+                    await clearAndSelectOption('contribuinteIcms', "1")
+                    await clearAndSelectOption('consumidorFinal', "0")
                 }
+                // else {
+                //     const selector = 'input[ui-br-cep-mask]';
+                //     await page.locator(selector).fill(cep);
 
-                clearAndType("RAZAOSOCIAL", razao_social);
+                //     listerRequest("GetCEP", cep)
+                //     await page.click("#buttonCep");
+                //     await timer();
 
-                await timer();
-                await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
-                await page.click("li[id=dadosAdicionais]");
+                //     clearAndType("INSCESTADUAL", insc_estadual);
+                //     await timer();
 
-                await clearAndSelectOption('contribuinteIcms', "1")
-                await clearAndSelectOption('consumidorFinal', "0")
+                //     await clearAndTypeByPlaceholder("Ex.: 000", numero);
+                //     await clearAndTypeByPlaceholder("Informe o endereço", rua);
+                //     await clearAndTypeByPlaceholder("Informe o bairro", bairro);
+                //     await timer();
+                //     await page.waitForSelector("input[name='INSCESTADUAL']", { timeout: 10000 });
+
+                //     const valorInscricao = await page.evaluate(() => {
+                //         const input = document.querySelector('input[name="INSCESTADUAL"]') as HTMLInputElement;
+                //         return input ? input.value : '';
+                //     });
+
+                //     if (valorInscricao !== insc_estadual) {
+                //         await page.locator('input[name="INSCESTADUAL"]').fill(insc_estadual);
+                //         await timer();
+                //     }
+
+                //     clearAndType("RAZAOSOCIAL", razao_social);
+
+                //     await timer();
+                //     await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
+                //     await page.click("li[id=dadosAdicionais]");
+
+                //     await clearAndSelectOption('contribuinteIcms', "1")
+                //     await clearAndSelectOption('consumidorFinal', "0")
+                // }
             }
-
-
-
-
-
+        } catch (er) {
+            console.log(er)
         }
     },
     "create_cte": async () => {
@@ -413,15 +455,14 @@ const creations = {
             // await findAndSelectOption("ufPlaca", general_config.trucker.trucker_uf);
             // await timer()
             // await findAndSelectOption("tipoVeiculo", general_config.trucker.type_trucker);
-            // await timer()
-            // await findAndSelectOption("tipoRodado", general_config.trucker.type_wheelset);
-            // await timer()
-            // await findAndSelectOption("tipoCarroceria", general_config.trucker.type_body)
-            // await timer()
-            // await findAndSelectOption("tipoProprietario", general_config.trucker.type_owner)
-            // await timer()
-            await findAndSelectOption("propVeiculo", "00.000.000/0001-91")
             await timer()
+            // await findAndSelectOption("tipoRodado", general_config.trucker.type_wheelset);
+            await timer()
+            // await findAndSelectOption("tipoCarroceria", general_config.trucker.type_body)
+            await timer()
+            // await findAndSelectOption("tipoProprietario", general_config.trucker.type_owner)
+            await page.waitForSelector('egs-gcadastro input.form-control:not([type="hidden"])', { timeout: 10000 });
+            await findAndSelectOption("propVeiculo", "00.000.000/0001-91")
         }
     },
 
@@ -436,14 +477,9 @@ const creations = {
 
 
         await page.waitForSelector('input[name="login"]', { timeout: 10000 });
-
         await clearAndType('login', "FINANCEIRO");
-
         await clearAndType('senha', "inter2026");
-
         await clearAndType('chaveAcesso', "50201");
-
-        await timer()
         const submitButton = 'button[type="submit"]';
         await page.waitForSelector(submitButton, { state: 'visible' });
         await page.click(submitButton);
@@ -473,47 +509,75 @@ async function findAndSelectOption(placeholder: string, value: string) {
 
     const inputSelector = `${containerTag} input.form-control:not([type="hidden"])`;
     const itemSelector = `${containerTag} ul.keydownRows`;
-    const notFoundSelector = `${containerTag} .mgs-select`; // Div "Pesquisa não encontrada"
-    const btnAddSelector = `${containerTag} .mgs-select button`; // Botão "+ Adicionar"
+    const notFoundSelector = `${containerTag} .mgs-select`;
 
     try {
         await page.waitForSelector(inputSelector, { visible: true });
-        await page.locator(inputSelector).fill(value);
 
-        // 2. Aguarda o loading sumir
+        // 1. Limpeza e Preenchimento com Validação (IGUAL AO CLEARANDTYPE)
+        await page.click(inputSelector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+
+        // Digita com delay para o Angular acompanhar o filtro
+        await page.type(inputSelector, value, { delay: 40 });
+
+        // GARANTE que o texto no input é o que queremos antes de prosseguir
+        await page.waitForFunction(
+            (sel: string, val: string) => {
+                const el = document.querySelector(sel) as HTMLInputElement;
+                return el && el.value.toLowerCase().includes(val.toLowerCase());
+            },
+            { timeout: 5000 },
+            inputSelector,
+            value
+        );
+
+        // 2. Aguarda o loader específico do componente sumir
         await page.waitForFunction((tag: string) => {
             const loader = document.querySelector(`${tag} .bg-box-select-text`);
-            return !loader || loader.classList.contains('ng-hide');
+            return !loader || loader.classList.contains('ng-hide') || loader.innerHTML === '';
         }, { timeout: 10000 }, containerTag);
 
+        // Pequena pausa para o DOM estabilizar a lista de resultados
+        await new Promise(r => setTimeout(r, 400));
+
         // 3. Verifica se apareceu "Pesquisa não encontrada"
-        // Esperamos um pouco para o Angular renderizar a div de erro ou a lista
-        await timer()
         const isNotFound = await page.evaluate((sel: string) => {
-            const el = document.querySelector(sel);
-            // Verifica se o elemento existe e NÃO está escondido (não tem ng-hide)
-            return el && !el.classList.contains('ng-hide');
+            const el = document.querySelector(sel) as HTMLElement;
+            return el && !el.classList.contains('ng-hide') && el.offsetHeight > 0;
         }, notFoundSelector);
 
         if (isNotFound) {
-            console.log(`Valor ${value} não encontrado. Clicando em Adicionar Novo...`);
-            await creations.create_destination(true)
-            // await creations.create_trucker()
+            console.log(`Valor "${value}" não encontrado em ${placeholder}.`);
+            await creations.create_destination(true);
             return;
         }
 
-        // 4. Se encontrou, seleciona via teclado
-        if (placeholder === "propVeiculo") {
+        // 4. Seleção Inteligente
+        // Se for propVeiculo ou campos de busca pesada, usamos teclado (mais estável)
+        if (placeholder === "propVeiculo" || placeholder === "ufPlaca") {
             await page.focus(inputSelector);
             await page.keyboard.press('ArrowDown');
+            await new Promise(r => setTimeout(r, 100));
             await page.keyboard.press('Enter');
         } else {
+            // Para os demais, espera a lista estar visível e clica no primeiro
+            await page.waitForSelector(itemSelector, { visible: true, timeout: 5000 });
             const items = await page.$$(itemSelector);
-            if (items.length > 0) await items[0].click();
+            if (items.length > 0) {
+                // Força o clique via evaluate para evitar erro de "Not Clickable"
+                await page.evaluate((sel: string) => {
+                    const firstItem = document.querySelector(sel) as HTMLElement;
+                    firstItem?.click();
+                }, itemSelector);
+            }
         }
-        await timer()
+
+        // Espera o input "perder o foco" ou a lista sumir para confirmar a seleção
+        await page.waitForSelector(itemSelector, { hidden: true, timeout: 2000 }).catch(() => { });
+
     } catch (error: any) {
-        console.error(`Erro no campo ${placeholder}:`, error.message);
+        console.error(`Erro crítico no campo ${placeholder}:`, error.message);
     }
 }
 
@@ -709,15 +773,34 @@ async function clearAndTypeByPlaceholder(placeholder: string, value: string) {
 
 async function clearAndType(name: string, value: string) {
     const selector = `input[name="${name}"]`;
+
+    // 1. Garante que o elemento está pronto
     await page.waitForSelector(selector, { visible: true });
 
+    // 2. Limpeza agressiva
     await page.focus(selector);
     await page.click(selector, { clickCount: 3 });
     await page.keyboard.press('Backspace');
 
-    await page.waitForSelector(selector, { timeout: 1000 });
-    await page.locator(selector).fill(value);
-    await timer()
+    // 3. Digitação cadenciada (mais segura que .fill para campos com máscara)
+    // O delay de 20ms simula um humano e dá tempo para o script da página processar
+    await page.type(selector, String(value), { delay: 20 });
+
+    // 4. VALIDAÇÃO: Só sai da função quando o valor no DOM for igual ao desejado
+    // Isso "trava" o robô até que o campo esteja correto
+    await page.waitForFunction(
+        (sel: string, expectedValue: string) => {
+            const input = document.querySelector(sel) as HTMLInputElement;
+            // Removemos pontos e traços na comparação se for um campo numérico/mascarado
+            const cleanInput = input.value.replace(/\D/g, '');
+            const cleanExpected = expectedValue.replace(/\D/g, '');
+
+            return cleanInput === cleanExpected || input.value === expectedValue;
+        },
+        { timeout: 5000 }, // Tempo limite de 5 segundos para validar
+        selector,
+        value
+    );
 }
 
 const timer = async () => {
