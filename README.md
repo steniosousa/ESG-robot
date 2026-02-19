@@ -13,6 +13,9 @@ Robô de web scraping para o sistema ESG com interface de controle web que permi
 - 📊 Status em tempo real da execução
 - 📋 Log de eventos com timestamps
 - 🖥️ **Janela flutuante ao lado do Chrome**
+- 🏠 **Aplicação Desktop (Electron)**
+- 📮 **Busca automática de CEP**
+- 📝 **Máscaras de CPF/CNPJ e CEP**
 
 ## 📋 Pré-requisitos
 
@@ -31,6 +34,32 @@ npm install
 ```bash
 npm start
 ```
+
+## 🖥️ **Versão Desktop (Executável)**
+
+### Desenvolvimento Electron
+```bash
+npm run electron-dev
+```
+
+### Build para Windows
+```bash
+npm run build-win
+```
+
+### Build Geral
+```bash
+npm run build
+```
+
+O executável será gerado na pasta `dist/` com instalador completo para Windows.
+
+### Funcionalidades da Versão Desktop:
+- 🚀 **Aplicação independente** (não precisa abrir navegador separado)
+- 🖥️ **Interface integrada** em janela desktop
+- 📦 **Instalador profissional** com atalhos
+- 🎯 **Servidor backend embutido**
+- 📁 **Portabilidade completa**
 
 ## 🌐 Interface de Controle
 

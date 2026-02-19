@@ -2,16 +2,46 @@
   "name": "robot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/index.ts",
-    "dev": "nodemon --watch src --ext ts --exec \"ts-node\" src/index.ts"
+    "dev": "nodemon --watch src --ext ts --exec \"ts-node\" src/index.ts",
+    "electron": "electron .",
+    "electron-dev": "set NODE_ENV=development && electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "dist": "npm run build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "build": {
+    "appId": "com.esgrobot.app",
+    "productName": "ESG Robot",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "loading.html",
+      "src/**/*",
+      "public/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
   "dependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^25.0.10",
@@ -21,5 +51,9 @@
     "readline-sync": "^1.4.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "electron": "^40.6.0",
+    "electron-builder": "^26.8.1"
   }
 }
