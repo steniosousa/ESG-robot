@@ -68,17 +68,28 @@ function loadApplication() {
 }
 
 function startServer() {
-    // Iniciar o servidor Node.js
-    serverProcess = spawn('ts-node', ['src/index.ts'], {
+    console.log('Iniciando servidor...');
+    
+    // Sempre iniciar o servidor, tanto em dev quanto em produção
+    console.log('Iniciando servidor embutido...');
+    serverProcess = spawn('node', ['server.js'], {
         stdio: 'inherit',
         shell: true,
-        cwd: __dirname // Garante que está no diretório correto
+        cwd: __dirname
     });
-
+    
     serverProcess.on('error', (error) => {
         console.error('Erro ao iniciar o servidor:', error);
+        
+        // Tentar método alternativo
+        console.log('Tentando método alternativo...');
+        serverProcess = spawn('node', ['server.js'], {
+            stdio: 'inherit',
+            shell: false,
+            cwd: __dirname
+        });
     });
-
+    
     serverProcess.on('close', (code) => {
         console.log(`Servidor encerrado com código ${code}`);
     });
