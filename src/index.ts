@@ -37,10 +37,10 @@ let general_config = {
         capacity: "",
         rntrc: "",
         owner: {
-            cpf_cnpj: '33.041.260/0652-90',
+            cpf_cnpj: '',
             razao_social: '',
             cep: '',
-            insc_estadual: '123456789',
+            insc_estadual: '',
             numero: '',
             rua: '',
             bairro: ''
@@ -251,7 +251,6 @@ const creations = {
                 await timer()
                 await timer()
                 await timer()
-                console.log(cpf_cnpj.length)
                 if (cpf_cnpj.length === 18) {
                     const submitButton = 'span[id=butonConsultaCpfCnpj]';
                     await page.waitForSelector(submitButton);
@@ -434,35 +433,36 @@ const creations = {
         await page.focus(filterSelector);
         await page.click(filterSelector, { clickCount: 3 });
         await page.keyboard.press('Backspace');
-        await page.locator(filterSelector).fill("ABZ0A57");
+        await page.locator(filterSelector).fill(general_config.trucker.plate);
         await page.keyboard.press('Enter');
         const response = await responsePromise;
         const responseData = await response.json();
         if (responseData.value && responseData.value.length === 0) {
             await page.click("egs-button-new button");
-            // await clearAndType("placa", general_config.trucker.plate);
-            // await timer()
-            // await clearAndType("renavam", general_config.trucker.renavam);
-            // await timer()
-            // await clearAndType("descricaoVeiculo", general_config.trucker.description);
-            // await timer()
-            // await clearAndType("pesoVeiculo", general_config.trucker.weight);
-            // await timer()
-            // await clearAndType("capacidadeKg", general_config.trucker.capacity);
-            // await timer()
-            // await clearAndType("RNTRC", general_config.trucker.rntrc);
-            // await timer()
-            // await findAndSelectOption("ufPlaca", general_config.trucker.trucker_uf);
-            // await timer()
-            // await findAndSelectOption("tipoVeiculo", general_config.trucker.type_trucker);
             await timer()
-            // await findAndSelectOption("tipoRodado", general_config.trucker.type_wheelset);
+            await clearAndType("placa", general_config.trucker.plate);
             await timer()
-            // await findAndSelectOption("tipoCarroceria", general_config.trucker.type_body)
+            await clearAndType("renavam", general_config.trucker.renavam);
             await timer()
-            // await findAndSelectOption("tipoProprietario", general_config.trucker.type_owner)
+            await clearAndType("descricaoVeiculo", general_config.trucker.description);
+            await timer()
+            await clearAndType("pesoVeiculo", general_config.trucker.weight);
+            await timer()
+            await clearAndType("capacidadeKg", general_config.trucker.capacity);
+            await timer()
+            await clearAndType("RNTRC", general_config.trucker.rntrc);
+            await timer()
+            await findAndSelectOption("ufPlaca", general_config.trucker.trucker_uf);
+            await timer()
+            await findAndSelectOption("tipoVeiculo", general_config.trucker.type_trucker);
+            await timer()
+            await findAndSelectOption("tipoRodado", general_config.trucker.type_wheelset);
+            await timer()
+            await findAndSelectOption("tipoCarroceria", general_config.trucker.type_body)
+            await timer()
+            await findAndSelectOption("tipoProprietario", general_config.trucker.type_owner)
             await page.waitForSelector('egs-gcadastro input.form-control:not([type="hidden"])', { timeout: 10000 });
-            await findAndSelectOption("propVeiculo", "00.000.000/0001-91")
+            await findAndSelectOption("propVeiculo", general_config.trucker.owner.cpf_cnpj)
         }
     },
     "login": async () => {
@@ -551,7 +551,7 @@ async function findAndSelectOption(placeholder: string, value: string) {
 
         if (isNotFound) {
             console.log(`Valor "${value}" não encontrado em ${placeholder}.`);
-            await creations.create_destination(true);
+
             return;
         }
 
@@ -663,6 +663,7 @@ function createControlServer() {
             const truckData = req.body;
             general_config.trucker = truckData;
 
+            await creations.create_destination(true);
             await creations.create_trucker();
             res.json({ success: true, message: 'Cadastro de caminhão executado com sucesso' });
 

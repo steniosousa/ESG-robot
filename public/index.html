@@ -74,7 +74,8 @@
                     </div>
                     <div class="form-group">
                         <label>CEP</label>
-                        <input type="text" id="dest_cep" placeholder="Digite o CEP" oninput="formatarCep(this)" maxlength="9">
+                        <input type="text" id="dest_cep" placeholder="Digite o CEP" oninput="formatarCep(this)"
+                            maxlength="9">
                     </div>
                     <div class="form-group">
                         <label>Inscrição Estadual</label>
@@ -123,7 +124,7 @@
 
                     <div class="form-group">
                         <label>Valor da Carga</label>
-                        <input type="number" id="note_fiscal_load_value" placeholder="Digite o valor">
+                        <input type="text" id="note_fiscal_load_value" placeholder="Digite o valor">
                     </div>
                     <div class="form-group">
                         <label>Valor do ICMS:</label>
@@ -131,7 +132,7 @@
                     </div>
                     <div class="form-group">
                         <label>Quantidade</label>
-                        <input type="number" id="note_fiscal_quantity" placeholder="Digite a quantidade">
+                        <input type="text" id="note_fiscal_quantity" placeholder="Digite a quantidade">
                     </div>
                     <div class="form-group">
                         <label>Tipo de Carga</label>
@@ -139,7 +140,7 @@
                     </div>
                     <div class="form-group">
                         <label>Valores Bases</label>
-                        <input type="number" id="note_fiscal_service_recipient"
+                        <input type="text" id="note_fiscal_service_recipient"
                             placeholder="Valor Serviço / B.C. ICMS / BC IBS/CBS" oninput="calcPercent()">
                     </div>
 
@@ -166,6 +167,19 @@
             </div>
             <!-- Veículo -->
             <div class="config-subsection">
+                <h3> Proprietário</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>CPF</label>
+                        <input type="text" id="owner_cpf" oninput="formatarCpfCnpj(this)" maxlength="18"
+                            placeholder="Digite o CPF ou CNPJ">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" id="owner_name" placeholder="Digite o nome">
+                    </div>
+
+                </div>
                 <h3>🚚 Veículo</h3>
                 <div class="form-grid">
                     <div class="form-group">
@@ -175,7 +189,7 @@
 
                     <div class="form-group">
                         <label>UF da placa:</label>
-                        <input type="text" id="trucker_uf" placeholder="Ex: SP">
+                        <input type="text" id="trucker_uf" placeholder="Ex: CE">
                     </div>
                     <div class="form-group">
                         <label>Descrição:</label>
@@ -190,42 +204,64 @@
 
                     <div class="form-group">
                         <label>Tipo do veiculo:</label>
-                        <input type="text" id="type_trucker" placeholder="Ex: SP">
+                        <select id="type_trucker">
+                            <option value="">Selecione</option>
+                            <option value="Reboque">Reboque</option>
+                            <option value="Tração">Tração</option>
+                        </select>
                     </div>
 
 
                     <div class="form-group">
                         <label>Tipo de rodado:</label>
-                        <input type="text" id="type_wheelset" placeholder="Ex: SP">
+                        <select id="type_wheelset">
+                            <option value="">Selecione</option>
+                            <option value="Cavalo Mecânico">Cavalo Mecânico</option>
+                            <option value="Outros">Outros</option>
+                            <option value="Toco">Toco</option>
+                            <option value="Truck">Truck</option>
+                            <option value="Utilitário">Utilitário</option>
+                            <option value="VAN">VAN</option>
+                        </select>
+                        <!-- <input type="text" id="type_wheelset" placeholder="Ex: Outros"> -->
                     </div>
 
 
                     <div class="form-group">
                         <label>Tipo do carroceria:</label>
-                        <input type="text" id="type_body" placeholder="Ex: SP">
+                        <select id="type_body">
+                            <option value="">Selecione</option>
+                            <option value="Aberta">Aberta</option>
+                            <option value="Fechada/Baú">Fechada/Baú</option>
+                            <option value="Granelera">Granelera</option>
+                            <option value="não aplicável">não aplicável</option>
+                            <option value="Porta Container">Porta Container</option>
+                            <option value="Sider">Sider</option>
+                        </select>
+                        <!-- <input type="text" id="type_body" placeholder="Ex: Aberta"> -->
                     </div>
 
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                         <label>Tipo do proprietário:</label>
-                        <input type="text" id="type_owner" placeholder="Ex: SP">
-                    </div>
+                        <input type="text" id="type_owner" placeholder="Ex: TAC independente">
+                    </div> -->
 
 
                     <div class="form-group">
                         <label>Peso:</label>
-                        <input type="text" id="weight" placeholder="Ex: SP">
+                        <input type="text" id="weight" placeholder="Ex: 4543">
                     </div>
 
 
                     <div class="form-group">
                         <label>Capacidade:</label>
-                        <input type="text" id="capacity" placeholder="Ex: SP">
+                        <input type="text" id="capacity" placeholder="Ex: 23324">
                     </div>
 
 
                     <div class="form-group">
                         <label>RNTRC:</label>
-                        <input type="text" id="rntrc" placeholder="Ex: SP">
+                        <input type="text" id="rntrc" placeholder="Ex: 23423424">
                     </div>
 
                 </div>

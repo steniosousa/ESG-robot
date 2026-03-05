@@ -31,7 +31,7 @@ async function buscarCep(cep) {
     try {
         // Remove caracteres não numéricos do CEP
         const cepLimpo = cep.replace(/\D/g, '');
-        console.log(cepLimpo.length,"oi")
+        console.log(cepLimpo.length, "oi")
 
         if (cepLimpo.length !== 8) {
             showNotification('CEP deve ter 8 dígitos', 'error');
@@ -39,10 +39,10 @@ async function buscarCep(cep) {
         }
 
         showNotification('🔍 Buscando CEP...', 'info');
-        
+
         // API ViaCEP (gratuita e confiável)
         const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-        
+
         console.log(response)
         if (!response.ok) {
             showNotification('Erro ao buscar CEP', 'error');
@@ -50,7 +50,7 @@ async function buscarCep(cep) {
         }
 
         const dados = await response.json();
-        
+
         if (dados.erro) {
             showNotification('CEP não encontrado', 'error');
             return;
@@ -61,9 +61,9 @@ async function buscarCep(cep) {
         document.getElementById('dest_rua').value = dados.logradouro || '';
         document.getElementById('dest_bairro').value = dados.bairro || '';
         document.getElementById('dest_cidade').value = dados.localidade || '';
-        
+
         showNotification('✅ Endereço preenchido automaticamente!', 'success');
-        
+
     } catch (error) {
         showNotification('Erro ao buscar CEP', 'error');
     }
@@ -109,8 +109,8 @@ function formatarCpfCnpj(input) {
 
 function calcPercent() {
     let value = document.getElementById('note_fiscal_service_recipient').value;
-    let v_ibs = document.getElementById('v_ibs').value = (value * 0.1) / 100;
-    let v_cbs = document.getElementById('v_cbs').value = (value * 0.9) / 100;
+    document.getElementById('v_ibs').value = ((value * 0.1) / 100).toFixed(2);
+    document.getElementById('v_cbs').value = ((value * 0.9) / 100).toFixed(2);
     if (value == '') {
         document.getElementById('v_ibs').value = '0,1%';
         document.getElementById('v_cbs').value = '0,9%';
@@ -304,8 +304,8 @@ function validateConfig(type) {
     let requiredFields = [];
 
     if (type === "driver") {
-        const element = document.getElementById("dest_cpf_cnpj");
-        if(element.value.length !== 14) {
+        const element = document.getElementById("driver_cpf");
+        if (element.value.length !== 14) {
             showNotification('CPF do motorista deve ter 14 caracteres', 'error');
             return false;
         }
@@ -338,7 +338,6 @@ function validateConfig(type) {
             { id: 'type_trucker', name: 'Tipo do veículo' },
             { id: 'type_wheelset', name: 'Tipo do veículo' },
             { id: 'type_body', name: 'Tipo do veículo' },
-            { id: 'type_owner', name: 'Tipo do veículo' },
             { id: 'weight', name: 'Peso' },
             { id: 'capacity', name: 'Capacidade' },
             { id: 'rntrc', name: 'RNTRC' },
@@ -368,7 +367,6 @@ function validateConfig(type) {
             { id: 'type_trucker', name: 'Tipo do veículo' },
             { id: 'type_wheelset', name: 'Tipo do veículo' },
             { id: 'type_body', name: 'Tipo do veículo' },
-            { id: 'type_owner', name: 'Tipo do veículo' },
             { id: 'weight', name: 'Peso' },
             { id: 'capacity', name: 'Capacidade' },
             { id: 'rntrc', name: 'RNTRC' },
@@ -528,7 +526,7 @@ function cadastrarCaminhao() {
     const truckData = {
         type_wheelset: document.getElementById('type_wheelset').value,
         type_body: document.getElementById('type_body').value,
-        type_owner: document.getElementById('type_owner').value,
+        type_owner: 'TAC independente',
         plate: document.getElementById('plate').value,
         trucker_uf: document.getElementById('trucker_uf').value,
         description: document.getElementById("description").value,
@@ -536,18 +534,13 @@ function cadastrarCaminhao() {
         weight: document.getElementById("weight").value,
         capacity: document.getElementById("capacity").value,
         rntrc: document.getElementById("rntrc").value,
+        renavam: document.getElementById("renavam").value,
         owner: {
-            cpf_cnpj: '33.041.260/0652-90',
-            razao_social: '',
-            cep: '',
-            insc_estadual: '123456789',
-            numero: '',
-            rua: '',
-            bairro: ''
+            cpf_cnpj: document.getElementById("owner_cpf").value,
+            razao_social: document.getElementById("owner_name").value,
         }
 
     };
-
 
     // Enviar requisição para executar o cadastro de motorista com os dados atuais
     fetch('/api/cadastro-caminhao', {
