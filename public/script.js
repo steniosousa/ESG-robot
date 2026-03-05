@@ -3,6 +3,104 @@ let knownPermissions = new Set();
 let pendingPermissions = [];
 let accessKeys = [];
 
+// Função para buscar dados do CNPJ
+async function buscarCnpj(cnpj) {
+    try {
+        // Remove caracteres não numéricos do CNPJ
+        const cnpjLimpo = cnpj.replace(/\D/g, '');
+        
+        if (cnpjLimpo.length !== 14) {
+            console.log('CNPJ incompleto, aguardando...');
+            return;
+        }
+
+        showNotification('🔍 Buscando dados do CNPJ...', 'info');
+
+        // API BrasilAPI (gratuita e confiável)
+        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+        
+        if (!response.ok) {
+            throw new Error('CNPJ não encontrado na base de dados');
+        }
+
+        const data = await response.json();
+        
+        // Preencher os campos com os dados encontrados
+        document.getElementById('dest_razao_social').value = data.razao_social || '';
+        document.getElementById('dest_cep').value = data.cep || '';
+        document.getElementById('dest_rua').value = data.descricao_tipo_logradouro + ' ' + (data.logradouro || '') || '';
+        document.getElementById('dest_numero').value = data.numero || '';
+        document.getElementById('dest_bairro').value = data.bairro || '';
+        document.getElementById('dest_cidade').value = data.municipio || '';
+        
+        // Se encontrou CEP, busca os detalhes do endereço
+        if (data.cep) {
+            await buscarCep(data.cep);
+        }
+        
+        // Foca no campo Inscrição Estadual (único campo obrigatório para CNPJ)
+        document.getElementById('dest_insc_estadual').focus();
+        
+        showNotification('✅ Dados do CNPJ preenchidos com sucesso!', 'success');
+        
+    } catch (error) {
+        console.error('Erro ao buscar CNPJ:', error);
+        showNotification('❌ CNPJ não encontrado. Preencha os dados manualmente.', 'error');
+        
+        // Limpa campos que podem ter sido preenchidos incorretamente
+        document.getElementById('dest_razao_social').value = '';
+        document.getElementById('dest_cep').value = '';
+        document.getElementById('dest_rua').value = '';
+        document.getElementById('dest_bairro').value = '';
+        document.getElementById('dest_cidade').value = '';
+    }
+}
+
+function formatarCpfCnpj(input) {
+    let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+
+    // Limita o comprimento máximo
+    if (value.length > 14) {
+        value = value.substring(0, 14);
+    }
+
+    // Formata como CPF (XXX.XXX.XXX-XX) ou CNPJ (XX.XXX.XXX/XXXX-XX)
+    if (value.length <= 11) {
+        // Formato CPF: XXX.XXX.XXX-XX
+        if (value.length <= 3) {
+            value = value;
+        } else if (value.length <= 6) {
+            value = value.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+        } else if (value.length <= 9) {
+            value = value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+        } else {
+            value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+        }
+    } else {
+        // Formato CNPJ: XX.XXX.XXX/XXXX-XX
+        if (value.length <= 2) {
+            value = value;
+        } else if (value.length <= 5) {
+            value = value.replace(/(\d{2})(\d{0,3})/, '$1.$2');
+        } else if (value.length <= 8) {
+            value = value.replace(/(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
+        } else if (value.length <= 12) {
+            value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
+        } else {
+            value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
+        }
+    }
+
+    input.value = value;
+
+    console.log('value', value);
+    // Se for CNPJ completo (18 caracteres formatados), busca automático
+    if (value.length === 18 && input.id === 'dest_cpf_cnpj') {
+        console.log('CNPJ completo, acionando busca automática:', input.value);
+        buscarCnpj(input.value);
+    }
+}
+
 function formatarCep(input) {
     let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
 
@@ -69,48 +167,11 @@ async function buscarCep(cep) {
     }
 }
 
-function formatarCpfCnpj(input) {
-    let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
-
-    // Limita o comprimento máximo
-    if (value.length > 14) {
-        value = value.substring(0, 14);
-    }
-
-    // Formata como CPF (XXX.XXX.XXX-XX) ou CNPJ (XX.XXX.XXX/XXXX-XX)
-    if (value.length <= 11) {
-        // Formato CPF: XXX.XXX.XXX-XX
-        if (value.length <= 3) {
-            value = value;
-        } else if (value.length <= 6) {
-            value = value.replace(/(\d{3})(\d{0,3})/, '$1.$2');
-        } else if (value.length <= 9) {
-            value = value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
-        } else {
-            value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
-        }
-    } else {
-        // Formato CNPJ: XX.XXX.XXX/XXXX-XX
-        if (value.length <= 2) {
-            value = value;
-        } else if (value.length <= 5) {
-            value = value.replace(/(\d{2})(\d{0,3})/, '$1.$2');
-        } else if (value.length <= 8) {
-            value = value.replace(/(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
-        } else if (value.length <= 12) {
-            value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
-        } else {
-            value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
-        }
-    }
-
-    input.value = value;
-}
-
 function calcPercent() {
     let value = document.getElementById('note_fiscal_service_recipient').value;
-    document.getElementById('v_ibs').value = ((value * 0.1) / 100).toFixed(2);
-    document.getElementById('v_cbs').value = ((value * 0.9) / 100).toFixed(2);
+    console.log(value)
+    document.getElementById('v_ibs').value = ((parseFloat(value) * 0.1) / 100).toFixed(2);
+    document.getElementById('v_cbs').value = ((parseFloat(value) * 0.9) / 100).toFixed(2);
     if (value == '') {
         document.getElementById('v_ibs').value = '0,1%';
         document.getElementById('v_cbs').value = '0,9%';
@@ -347,31 +408,13 @@ function validateConfig(type) {
         // Validação completa (tipo não especificado)
         requiredFields = [
             { id: 'driver_cpf', name: 'CPF Motorista' },
-            { id: 'driver_name', name: 'Nome do Motorista' },
-            { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
             { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
-            { id: 'dest_cep', name: 'CEP do destinatário' },
-            { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
-            { id: 'dest_numero', name: 'Número do destinatário' },
             { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
             { id: 'note_fiscal_quantity', name: 'Quantidade' },
             { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
             { id: 'note_fiscal_type', name: 'Tipo de Carga' },
             { id: 'note_fiscal_load_icms', name: 'Valor ICMS' },
-
-
             { id: 'plate', name: 'Veículo' },
-            { id: 'trucker_uf', name: 'UF do veículo' },
-            { id: 'renavam', name: 'renavam' },
-            { id: 'description', name: 'Descrição' },
-            { id: 'type_trucker', name: 'Tipo do veículo' },
-            { id: 'type_wheelset', name: 'Tipo do veículo' },
-            { id: 'type_body', name: 'Tipo do veículo' },
-            { id: 'weight', name: 'Peso' },
-            { id: 'capacity', name: 'Capacidade' },
-            { id: 'rntrc', name: 'RNTRC' },
-
-
             { id: 'v_cbs', name: 'Valor CBSe' },
             { id: 'v_ibs', name: 'Valor IBS' }
         ];
