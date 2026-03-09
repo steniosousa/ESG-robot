@@ -46,6 +46,9 @@
                 <button class="btn-cadastro-caminhao" onclick="cadastrarCaminhao()">
                     🚚 Cadastro de Caminhão
                 </button>
+                <button class="btn-cadastro-caminhao" onclick="cadastrarReboque()">
+                    🚛 Cadastro de Reboque
+                </button>
                 <button class="btn-criar-cte" onclick="criarCTE()">
                     📄 Criação de CTe
                 </button>
@@ -167,7 +170,7 @@
             </div>
             <!-- Veículo -->
             <div class="config-subsection">
-                <h3> Proprietário</h3>
+                <h3> Proprietário do veículo</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>CPF</label>
@@ -203,25 +206,11 @@
 
 
                     <div class="form-group">
-                        <label>Tipo do veiculo:</label>
-                        <select id="type_trucker">
-                            <option value="">Selecione</option>
-                            <option value="Reboque">Reboque</option>
-                            <option value="Tração">Tração</option>
-                        </select>
-                    </div>
-
-
-                    <div class="form-group">
                         <label>Tipo de rodado:</label>
                         <select id="type_wheelset">
                             <option value="">Selecione</option>
                             <option value="Cavalo Mecânico">Cavalo Mecânico</option>
-                            <option value="Outros">Outros</option>
-                            <option value="Toco">Toco</option>
                             <option value="Truck">Truck</option>
-                            <option value="Utilitário">Utilitário</option>
-                            <option value="VAN">VAN</option>
                         </select>
                         <!-- <input type="text" id="type_wheelset" placeholder="Ex: Outros"> -->
                     </div>
@@ -262,6 +251,74 @@
                     <div class="form-group">
                         <label>RNTRC:</label>
                         <input type="text" id="rntrc" placeholder="Ex: 23423424">
+                    </div>
+
+                </div>
+
+                <h3> Proprietário do reboque</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>CPF</label>
+                        <input type="text" id="reboque_owner_cpf" oninput="formatarCpfCnpj(this)" maxlength="18"
+                            placeholder="Digite o CPF ou CNPJ">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" id="reboque_owner_name" placeholder="Digite o nome">
+                    </div>
+
+                </div>
+
+                <h3 style="margin-top: 5%;">🚚 Reboque</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Placa do reboque:</label>
+                        <input type="text" id="reboque_plate" placeholder="Ex: ABZ0A57">
+                    </div>
+
+                    <div class="form-group">
+                        <label>UF da placa:</label>
+                        <input type="text" id="reboque_trucker_uf" placeholder="Ex: CE">
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição:</label>
+                        <input type="text" id="reboque_description" placeholder="Ex: SP">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Renavam:</label>
+                        <input type="text" id="reboque_renavam" placeholder="Ex: SP">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Tipo do carroceria:</label>
+                        <select id="reboque_type_body">
+                            <option value="">Selecione</option>
+                            <option value="Aberta">Aberta</option>
+                            <option value="Fechada/Baú">Fechada/Baú</option>
+                            <option value="Granelera">Granelera</option>
+                            <option value="não aplicável">não aplicável</option>
+                            <option value="Porta Container">Porta Container</option>
+                            <option value="Sider">Sider</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Peso:</label>
+                        <input type="text" id="reboque_weight" placeholder="Ex: 4543">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Capacidade:</label>
+                        <input type="text" id="reboque_capacity" placeholder="Ex: 23324">
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>RNTRC:</label>
+                        <input type="text" id="reboque_rntrc" placeholder="Ex: 23423424">
                     </div>
 
                 </div>

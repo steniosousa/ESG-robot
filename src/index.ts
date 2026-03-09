@@ -39,11 +39,23 @@ let general_config = {
         owner: {
             cpf_cnpj: '',
             razao_social: '',
-            cep: '',
-            insc_estadual: '',
-            numero: '',
-            rua: '',
-            bairro: ''
+        },
+    },
+    reboque: {
+        reboque_plate: "",
+        reboque_trucker_uf: "",
+        reboque_description: "",
+        reboque_renavam: "",
+        reboque_type_trucker: "",
+        reboque_type_wheelset: "",
+        reboque_type_body: "",
+        reboque_type_owner: "",
+        reboque_weight: "",
+        reboque_capacity: "",
+        reboque_rntrc: "",
+        reboque_owner: {
+            cpf_cnpj: '',
+            razao_social: '',
         },
     },
     docs: {
@@ -214,10 +226,10 @@ const creations = {
             await clearAndType("RAZAOSOCIAL", name);
         }
     },
-    "create_destination": async (owner: boolean) => {
+    "create_destination": async () => {
         try {
 
-            const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = owner ? general_config.trucker.owner : general_config.destination;
+            const { cpf_cnpj, insc_estadual, razao_social, cep, numero, bairro, rua } = general_config.destination;
 
             await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
                 waitUntil: "networkidle2",
@@ -303,6 +315,64 @@ const creations = {
         } catch (er) {
             console.log(er)
         }
+    },
+    "create_owner": async (isReboque: boolean) => {
+        try {
+            const { cpf_cnpj, razao_social } = isReboque ? general_config.reboque.reboque_owner : general_config.trucker.owner;
+
+            await page.goto("https://app.egssistemas.com.br/cadastro-geral", {
+                waitUntil: "networkidle2",
+                timeout: 30000
+            });
+            await timer()
+
+            const responsePromise = listerRequest('Gcadastro', cpf_cnpj);
+
+            const filterSelector = 'td:nth-of-type(3) input[aria-label="Filtro de célula';
+            await page.waitForSelector(filterSelector, { visible: true });
+            await page.click(filterSelector, { clickCount: 3 });
+            await page.keyboard.press('Backspace');
+            await timer();
+            await page.locator(filterSelector).fill(cpf_cnpj);
+            await page.keyboard.press('Enter');
+
+            const response = await responsePromise;
+            const responseData = await response.json();
+            await timer()
+            if (responseData.value && responseData.value.length === 0) {
+                await page.click("egs-button-new button");
+                await timer()
+                await timer()
+                await timer()
+                clearAndType("cpfCnpj", cpf_cnpj);
+                await timer()
+                await timer()
+                await timer()
+
+                await timer()
+                await timer()
+                await timer()
+                if (cpf_cnpj.length === 18) {
+                    const submitButton = 'span[id=butonConsultaCpfCnpj]';
+                    await page.waitForSelector(submitButton);
+                    await page.click(submitButton);
+                    await listerRequestCNPJ('GetCadastroReceiraFederal', cpf_cnpj);
+                    await timer();
+                }
+                else {
+                    clearAndType("RAZAOSOCIAL", razao_social);
+                    await timer();
+                    await page.waitForSelector("li[id=dadosAdicionais]", { timeout: 10000 });
+                    await page.click("li[id=dadosAdicionais]");
+
+                    await clearAndSelectOption('contribuinteIcms', "1")
+                    await clearAndSelectOption('consumidorFinal', "0")
+                }
+            }
+        } catch (er) {
+            console.log(er)
+        }
+
     },
     "create_cte": async () => {
         await page.goto("https://app.egssistemas.com.br/cte", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -465,6 +535,46 @@ const creations = {
             await findAndSelectOption("propVeiculo", general_config.trucker.owner.cpf_cnpj)
         }
     },
+    "create_reboque": async () => {
+        await page.goto("https://app.egssistemas.com.br/veiculo", { waitUntil: "domcontentloaded", timeout: 30000 });
+        const responsePromise = listerRequest('Gveiculo', general_config.reboque.reboque_plate);
+        const filterSelector = 'td:nth-of-type(2) input[aria-label="Filtro de célula"]';
+        await page.waitForSelector(filterSelector, { visible: true });
+        await page.focus(filterSelector);
+        await page.click(filterSelector, { clickCount: 3 });
+        await page.keyboard.press('Backspace');
+        await page.locator(filterSelector).fill(general_config.reboque.reboque_plate);
+        await page.keyboard.press('Enter');
+        const response = await responsePromise;
+        const responseData = await response.json();
+        if (responseData.value && responseData.value.length === 0) {
+            await page.click("egs-button-new button");
+            await timer()
+            await clearAndType("placa", general_config.reboque.reboque_plate);
+            await timer()
+            await clearAndType("renavam", general_config.reboque.reboque_renavam);
+            await timer()
+            await clearAndType("descricaoVeiculo", general_config.reboque.reboque_description);
+            await timer()
+            await clearAndType("pesoVeiculo", general_config.reboque.reboque_weight);
+            await timer()
+            await clearAndType("capacidadeKg", general_config.reboque.reboque_capacity);
+            await timer()
+            await clearAndType("RNTRC", general_config.reboque.reboque_rntrc);
+            await timer()
+            await findAndSelectOption("ufPlaca", general_config.reboque.reboque_trucker_uf);
+            await timer()
+            await findAndSelectOption("tipoVeiculo", general_config.reboque.reboque_type_trucker);
+            await timer()
+            await findAndSelectOption("tipoRodado", general_config.reboque.reboque_type_wheelset);
+            await timer()
+            await findAndSelectOption("tipoCarroceria", general_config.reboque.reboque_type_body)
+            await timer()
+            await findAndSelectOption("tipoProprietario", general_config.reboque.reboque_type_owner)
+            await page.waitForSelector('egs-gcadastro input.form-control:not([type="hidden"])', { timeout: 10000 });
+            await findAndSelectOption("propVeiculo", general_config.reboque.reboque_owner.cpf_cnpj)
+        }
+    },
     "login": async () => {
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
 
@@ -487,7 +597,7 @@ const creations = {
     "complete_route": async () => {
         await creations.login()
         await creations.create_driver()
-        await creations.create_destination(false)
+        await creations.create_destination()
         await creations.create_cte()
     }
 }
@@ -663,9 +773,33 @@ function createControlServer() {
             const truckData = req.body;
             general_config.trucker = truckData;
 
-            await creations.create_destination(true);
+            await creations.create_owner(false);
+            const continueButton = await requestPermission("Continuar cadastro");
+
+            if (continueButton) {
+                await page.click("button[data-original-title='Copiar']");
+            }
             await creations.create_trucker();
             res.json({ success: true, message: 'Cadastro de caminhão executado com sucesso' });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+            res.json({ success: false, message: errorMessage });
+        }
+    });
+
+    app.post('/api/cadastro-reboque', async (req, res) => {
+        try {
+            if (!robotCanStart) {
+                return res.json({ success: false, message: 'Robô não está pronto para executar esta ação' });
+            }
+            const reboqueData = req.body;
+            general_config.reboque = reboqueData;
+            console.log("Reboque data:", reboqueData);
+
+            await creations.create_reboque();
+            // await creations.create_owner(true);
+            res.json({ success: true, message: 'Cadastro de reboque executado com sucesso' });
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -689,7 +823,7 @@ function createControlServer() {
             general_config.destination.bairro = destinationData.bairro;
 
 
-            await creations.create_destination(false);
+            await creations.create_destination();
             res.json({ success: true, message: 'Registro de destinatário executado com sucesso' });
 
         } catch (error) {

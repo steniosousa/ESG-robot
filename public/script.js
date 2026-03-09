@@ -8,7 +8,7 @@ async function buscarCnpj(cnpj) {
     try {
         // Remove caracteres não numéricos do CNPJ
         const cnpjLimpo = cnpj.replace(/\D/g, '');
-        
+
         if (cnpjLimpo.length !== 14) {
             console.log('CNPJ incompleto, aguardando...');
             return;
@@ -18,13 +18,13 @@ async function buscarCnpj(cnpj) {
 
         // API BrasilAPI (gratuita e confiável)
         const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
-        
+
         if (!response.ok) {
             throw new Error('CNPJ não encontrado na base de dados');
         }
 
         const data = await response.json();
-        
+
         document.getElementById('dest_razao_social').value = data.razao_social || '';
         document.getElementById('dest_cep').value = data.cep || '';
         document.getElementById('dest_rua').value = data.logradouro || '';
@@ -32,9 +32,9 @@ async function buscarCnpj(cnpj) {
         document.getElementById('dest_bairro').value = data.bairro || '';
         document.getElementById('dest_cidade').value = data.municipio || '';
         document.getElementById('dest_insc_estadual').focus();
-        
+
         showNotification('✅ Dados do CNPJ preenchidos com sucesso!', 'success');
-        
+
     } catch (error) {
         console.error('Erro ao buscar CNPJ:', error);
         showNotification('❌ CNPJ não encontrado. Preencha os dados manualmente.', 'error');
@@ -102,7 +102,7 @@ function formatarCep(input) {
     input.value = value;
 
     // Se o CEP estiver completo (8 dígitos), busca automaticamente
-    if (value.length === 9 ) {
+    if (value.length === 9) {
         console.log(' [DEBUG] CEP completo, acionando busca automática:', value);
         buscarCep(value);
     }
@@ -163,7 +163,7 @@ function calcPercent() {
 
 }
 
-setInterval(updateStatus, 1000); 
+setInterval(updateStatus, 1000);
 
 async function updateStatus() {
     try {
@@ -375,19 +375,31 @@ function validateConfig(type) {
         }
     } else if (type === "truck") {
         requiredFields = [
-            { id: 'plate', name: 'Veículo' },
+            { id: 'plate', name: 'Placa do veiculo' },
             { id: 'trucker_uf', name: 'UF do veículo' },
             { id: 'renavam', name: 'renavam' },
             { id: 'description', name: 'Descrição' },
-            { id: 'type_trucker', name: 'Tipo do veículo' },
             { id: 'type_wheelset', name: 'Tipo do veículo' },
             { id: 'type_body', name: 'Tipo do veículo' },
             { id: 'weight', name: 'Peso' },
-            { id: 'capacity', name: 'Capacidade' },
             { id: 'rntrc', name: 'RNTRC' },
 
         ];
-    } else {
+
+    } else if (type = 'Reboque') {
+        requiredFields = [
+            { id: 'reboque_plate', name: 'Placa do reboque:' },
+            { id: 'reboque_trucker_uf', name: 'UF do reboque' },
+            { id: 'reboque_renavam', name: 'renavam do reboque' },
+            { id: 'reboque_description', name: 'Descrição do reboque' },
+            { id: 'reboque_type_wheelset', name: 'Tipo do veículo' },
+            { id: 'reboque_type_body', name: 'Tipo do veículo' },
+            { id: 'reboque_weight', name: 'Peso' },
+            { id: 'reboque_capacity', name: 'Capacidade' },
+            { id: 'reboque_rntrc', name: 'RNTRC' },
+        ];
+    }
+    else {
         // Validação completa (tipo não especificado)
         requiredFields = [
             { id: 'driver_cpf', name: 'CPF Motorista' },
@@ -543,19 +555,19 @@ function cadastrarMotorista() {
 
 // Cadastro de Caminhão
 function cadastrarCaminhao() {
-    // if (!validateConfig("truck")) {
-    //     return;
-    // }
+    if (!validateConfig("truck")) {
+        return;
+    }
     showNotification('🚀 Iniciando cadastro de caminhão...', 'info');
 
     const truckData = {
         type_wheelset: document.getElementById('type_wheelset').value,
         type_body: document.getElementById('type_body').value,
-        type_owner: 'TAC independente',
+        type_owner: 'independente',
         plate: document.getElementById('plate').value,
         trucker_uf: document.getElementById('trucker_uf').value,
         description: document.getElementById("description").value,
-        type_trucker: document.getElementById("type_trucker").value,
+        type_trucker: "Tração",
         weight: document.getElementById("weight").value,
         capacity: document.getElementById("capacity").value,
         rntrc: document.getElementById("rntrc").value,
@@ -579,6 +591,53 @@ function cadastrarCaminhao() {
         .then(data => {
             if (data.success) {
                 showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
+            } else {
+                showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification('❌ Erro de conexão com o servidor', 'error');
+        });
+}
+
+function cadastrarReboque() {
+    // if (!validateConfig("reboque")) {
+    //     return;
+    // }
+    showNotification('🚀 Iniciando cadastro de reboque...', 'info');
+
+    const truckData = {
+        reboque_type_wheelset: "Outros",
+        reboque_type_body: document.getElementById('reboque_type_body').value,
+        reboque_type_owner: 'independente',
+        reboque_plate: document.getElementById('reboque_plate').value,
+        reboque_trucker_uf: document.getElementById('reboque_trucker_uf').value,
+        reboque_description: document.getElementById("reboque_description").value,
+        reboque_type_trucker: "Reboque",
+        reboque_weight: document.getElementById("reboque_weight").value,
+        reboque_rntrc: document.getElementById("reboque_rntrc").value,
+        reboque_renavam: document.getElementById("reboque_renavam").value,
+        reboque_capacity: document.getElementById("reboque_capacity").value,
+        owner: {
+            cpf_cnpj: document.getElementById("reboque_owner_cpf").value,
+            razao_social: document.getElementById("reboque_owner_name").value,
+        }
+
+    };
+
+    // Enviar requisição para executar o cadastro de motorista com os dados atuais
+    fetch('/api/cadastro-reboque', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(truckData)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('✅ Reboque cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
             } else {
                 showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
             }
