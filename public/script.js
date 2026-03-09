@@ -25,20 +25,12 @@ async function buscarCnpj(cnpj) {
 
         const data = await response.json();
         
-        // Preencher os campos com os dados encontrados
         document.getElementById('dest_razao_social').value = data.razao_social || '';
         document.getElementById('dest_cep').value = data.cep || '';
-        document.getElementById('dest_rua').value = data.descricao_tipo_logradouro + ' ' + (data.logradouro || '') || '';
+        document.getElementById('dest_rua').value = data.logradouro || '';
         document.getElementById('dest_numero').value = data.numero || '';
         document.getElementById('dest_bairro').value = data.bairro || '';
         document.getElementById('dest_cidade').value = data.municipio || '';
-        
-        // Se encontrou CEP, busca os detalhes do endereço
-        if (data.cep) {
-            await buscarCep(data.cep);
-        }
-        
-        // Foca no campo Inscrição Estadual (único campo obrigatório para CNPJ)
         document.getElementById('dest_insc_estadual').focus();
         
         showNotification('✅ Dados do CNPJ preenchidos com sucesso!', 'success');
@@ -46,13 +38,6 @@ async function buscarCnpj(cnpj) {
     } catch (error) {
         console.error('Erro ao buscar CNPJ:', error);
         showNotification('❌ CNPJ não encontrado. Preencha os dados manualmente.', 'error');
-        
-        // Limpa campos que podem ter sido preenchidos incorretamente
-        document.getElementById('dest_razao_social').value = '';
-        document.getElementById('dest_cep').value = '';
-        document.getElementById('dest_rua').value = '';
-        document.getElementById('dest_bairro').value = '';
-        document.getElementById('dest_cidade').value = '';
     }
 }
 
@@ -93,10 +78,8 @@ function formatarCpfCnpj(input) {
 
     input.value = value;
 
-    console.log('value', value);
     // Se for CNPJ completo (18 caracteres formatados), busca automático
     if (value.length === 18 && input.id === 'dest_cpf_cnpj') {
-        console.log('CNPJ completo, acionando busca automática:', input.value);
         buscarCnpj(input.value);
     }
 }
@@ -119,7 +102,7 @@ function formatarCep(input) {
     input.value = value;
 
     // Se o CEP estiver completo (8 dígitos), busca automaticamente
-    if (value.length === 9) {
+    if (value.length === 9 ) {
         console.log(' [DEBUG] CEP completo, acionando busca automática:', value);
         buscarCep(value);
     }
@@ -180,7 +163,7 @@ function calcPercent() {
 
 }
 
-setInterval(updateStatus, 1000); // Reduzido para 1 segundo
+setInterval(updateStatus, 1000); 
 
 async function updateStatus() {
     try {
@@ -468,7 +451,6 @@ function fazerLogin() {
             showNotification('❌ Erro de conexão com o servidor', 'error');
         });
 }
-
 
 // Registrar Destinatário
 function registrarDestinatario() {
