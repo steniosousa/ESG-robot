@@ -59,7 +59,7 @@ let general_config = {
         },
     },
     docs: {
-        access_key: []
+        access_key: [] as string[]
     },
     tax_reform: {
         Valor_CBS: "",
@@ -78,6 +78,79 @@ let controlPage: any = null;
 let pendingPermission: { action: string; resolve: (value: boolean) => void } | null = null;
 let permissionRequests: Array<{ action: string; timestamp: number }> = [];
 let robotCanStart = false;
+
+// Função para processar XML e extrair informações
+function processarXML(xmlContent: string) {
+    try {
+        console.log('🔍 Processando XML...');
+        
+        // Extrair informações usando regex (mais robusto que parser XML)
+        const extrairCampo = (tag: string): string => {
+            const regex = new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`, 'gi');
+            const match = xmlContent.match(regex);
+            return match && match[0] ? match[0].replace(/<[^>]*>/g, '').trim() : '';
+        };
+
+        // Extrair chave de acesso
+        const chaveAcesso = extrairCampo('chNFe') || 
+            (xmlContent.match(/chNFe="([^"]*)"/)?.[1] || '');
+        
+        // Extrair dados do destinatário
+        const destinatarioCNPJ = extrairCampo('CNPJ') || 
+            (xmlContent.match(/<dest>[\s\S]*?<CNPJ>([^<]*)<\/CNPJ>[\s\S]*?<\/dest>/)?.[1] || '');
+        const destinatarioNome = extrairCampo('xNome') || 
+            (xmlContent.match(/<dest>[\s\S]*?<xNome>([^<]*)<\/xNome>[\s\S]*?<\/dest>/)?.[1] || '');
+        
+        // Extrair dados da nota fiscal
+        const valorTotal = extrairCampo('vNF') || '';
+        const quantidade = extrairCampo('qVol') || '1';
+        const valorICMS = extrairCampo('vICMS') || '';
+        const tipoProduto = extrairCampo('xProd') || '';
+
+        // Atualizar configuração geral
+        general_config.destination.cpf_cnpj = formatarCNPJ(destinatarioCNPJ);
+        general_config.destination.razao_social = destinatarioNome;
+        general_config.note_fiscal.load_value = valorTotal;
+        general_config.note_fiscal.quantity = quantidade;
+        general_config.note_fiscal.load_service = valorTotal;
+        general_config.note_fiscal.type = tipoProduto;
+        general_config.note_fiscal.service_recipient = valorTotal;
+        general_config.note_fiscal.load_icms = valorICMS;
+        
+        if (chaveAcesso) {
+            general_config.docs.access_key = [chaveAcesso];
+        }
+
+        console.log('✅ XML processado com sucesso!');
+        console.log('📋 Dados extraídos:', {
+            chaveAcesso,
+            destinatario: { cnpj: destinatarioCNPJ, nome: destinatarioNome },
+            notaFiscal: { valor: valorTotal, icms: valorICMS, produto: tipoProduto }
+        });
+
+        return {
+            success: true,
+            data: general_config,
+            message: 'XML processado com sucesso!'
+        };
+
+    } catch (error: any) {
+        console.error('❌ Erro ao processar XML:', error);
+        return {
+            success: false,
+            error: error.message,
+            message: 'Erro ao processar XML'
+        };
+    }
+}
+
+// Função auxiliar para formatar CNPJ
+function formatarCNPJ(cnpj: string): string {
+    const numeros = cnpj.replace(/\D/g, '');
+    if (numeros.length !== 14) return cnpj;
+    
+    return numeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+}
 
 async function startGlobalLoadingMonitor() {
     if (loadingMonitorInterval) {
@@ -761,6 +834,31 @@ function createControlServer() {
         }
 
         res.json({ success: true });
+    });
+
+    // Endpoint para processar XML
+    app.post('/api/processar-xml', (req, res) => {
+        try {
+            const { xmlContent } = req.body;
+            
+            if (!xmlContent) {
+                return res.json({ 
+                    success: false, 
+                    message: 'Conteúdo XML não fornecido' 
+                });
+            }
+
+            const resultado = processarXML(xmlContent);
+            res.json(resultado);
+            
+        } catch (error: any) {
+            console.error('❌ Erro no endpoint /api/processar-xml:', error);
+            res.json({ 
+                success: false, 
+                error: error.message,
+                message: 'Erro ao processar XML no servidor' 
+            });
+        }
     });
 
     // Endpoint para fazer login

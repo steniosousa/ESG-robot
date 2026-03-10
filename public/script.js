@@ -3,12 +3,144 @@ let knownPermissions = new Set();
 let pendingPermissions = [];
 let accessKeys = [];
 
+// Função para ler arquivo XML selecionado
+function lerArquivoXML(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Mostrar informações do arquivo
+    document.getElementById('file_info').style.display = 'block';
+    document.getElementById('file_name').textContent = file.name;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const xmlContent = e.target.result;
+        document.getElementById('xml_content').value = xmlContent;
+        showNotification(`📁 Arquivo "${file.name}" carregado com sucesso!`, 'success');
+    };
+    
+    reader.onerror = function() {
+        showNotification('❌ Erro ao ler o arquivo XML', 'error');
+    };
+    
+    reader.readAsText(file);
+}
+
+// Função para processar XML
+async function processarXML() {
+    const xmlContent = document.getElementById('xml_content').value.trim();
+    const resultDiv = document.getElementById('xml_result');
+    
+    if (!xmlContent) {
+        showNotification('❌ Selecione um arquivo XML para processar', 'error');
+        return;
+    }
+
+    showNotification('🔄 Processando XML...', 'info');
+    
+    try {
+        const response = await fetch('/api/processar-xml', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ xmlContent })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Preencher campos com os dados extraídos
+            if (result.data.destination.cpf_cnpj) {
+                document.getElementById('dest_cpf_cnpj').value = result.data.destination.cpf_cnpj;
+                // Dispara o evento para formatar e buscar CNPJ
+                document.getElementById('dest_cpf_cnpj').dispatchEvent(new Event('input'));
+            }
+            
+            if (result.data.destination.razao_social) {
+                document.getElementById('dest_razao_social').value = result.data.destination.razao_social;
+            }
+            
+            if (result.data.note_fiscal.load_value) {
+                document.getElementById('note_fiscal_load_value').value = result.data.note_fiscal.load_value;
+            }
+            
+            if (result.data.note_fiscal.quantity) {
+                document.getElementById('note_fiscal_quantity').value = result.data.note_fiscal.quantity;
+            }
+            
+            if (result.data.note_fiscal.type) {
+                document.getElementById('note_fiscal_type').value = result.data.note_fiscal.type;
+            }
+            
+            if (result.data.note_fiscal.load_icms) {
+                document.getElementById('note_fiscal_load_icms').value = result.data.note_fiscal.load_icms;
+            }
+            
+            if (result.data.note_fiscal.service_recipient) {
+                document.getElementById('note_fiscal_service_recipient').value = result.data.note_fiscal.service_recipient;
+                calcPercent(); // Recalcula percentuais
+            }
+            
+            // Adicionar chaves de acesso
+            if (result.data.docs.access_key && result.data.docs.access_key.length > 0) {
+                accessKeys = [...accessKeys, ...result.data.docs.access_key];
+                updateKeysList();
+            }
+
+            // Mostrar resultado
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#d4edda';
+            resultDiv.style.border = '1px solid #c3e6cb';
+            resultDiv.style.color = '#155724';
+            resultDiv.innerHTML = `
+                <strong>✅ XML Processado com Sucesso!</strong><br>
+                📋 <strong>Dados Extraídos:</strong><br>
+                • Destinatário: ${result.data.destination.razao_social || 'Não encontrado'}<br>
+                • CNPJ: ${result.data.destination.cpf_cnpj || 'Não encontrado'}<br>
+                • Valor Total: R$ ${result.data.note_fiscal.load_value || '0,00'}<br>
+                • Chave de Acesso: ${result.data.docs.access_key[0] || 'Não encontrada'}
+            `;
+            
+            showNotification('✅ XML processado e campos preenchidos!', 'success');
+            
+        } else {
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#f8d7da';
+            resultDiv.style.border = '1px solid #f5c6cb';
+            resultDiv.style.color = '#721c24';
+            resultDiv.innerHTML = `<strong>❌ Erro:</strong> ${result.message}`;
+            
+            showNotification(result.message, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao processar XML:', error);
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#f8d7da';
+        resultDiv.style.border = '1px solid #f5c6cb';
+        resultDiv.style.color = '#721c24';
+        resultDiv.innerHTML = `<strong>❌ Erro de conexão:</strong> ${error.message}`;
+        
+        showNotification('❌ Erro ao processar XML', 'error');
+    }
+}
+
+// Função para limpar campo XML
+function limparXML() {
+    document.getElementById('xml_content').value = '';
+    document.getElementById('xml_result').style.display = 'none';
+    document.getElementById('file_info').style.display = 'none';
+    document.getElementById('xml_file').value = '';
+    showNotification('🧹 Campos XML limpos', 'info');
+}
+
 // Função para buscar dados do CNPJ
 async function buscarCnpj(cnpj) {
     try {
         // Remove caracteres não numéricos do CNPJ
         const cnpjLimpo = cnpj.replace(/\D/g, '');
-
+        
         if (cnpjLimpo.length !== 14) {
             console.log('CNPJ incompleto, aguardando...');
             return;
@@ -340,6 +472,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Adicionar evento de change ao input de arquivo
+    const xmlFileInput = document.getElementById('xml_file');
+    if (xmlFileInput) {
+        xmlFileInput.addEventListener('change', lerArquivoXML);
+    }
+
     // Inicializar lista vazia
     updateKeysList();
 });
@@ -375,41 +513,49 @@ function validateConfig(type) {
         }
     } else if (type === "truck") {
         requiredFields = [
-            { id: 'plate', name: 'Placa do veiculo' },
+            { id: 'plate', name: 'Veículo' },
             { id: 'trucker_uf', name: 'UF do veículo' },
             { id: 'renavam', name: 'renavam' },
             { id: 'description', name: 'Descrição' },
+            { id: 'type_trucker', name: 'Tipo do veículo' },
             { id: 'type_wheelset', name: 'Tipo do veículo' },
             { id: 'type_body', name: 'Tipo do veículo' },
+            { id: 'type_owner', name: 'Tipo do veículo' },
             { id: 'weight', name: 'Peso' },
+            { id: 'capacity', name: 'Capacidade' },
             { id: 'rntrc', name: 'RNTRC' },
 
         ];
-
-    } else if (type = 'Reboque') {
-        requiredFields = [
-            { id: 'reboque_plate', name: 'Placa do reboque:' },
-            { id: 'reboque_trucker_uf', name: 'UF do reboque' },
-            { id: 'reboque_renavam', name: 'renavam do reboque' },
-            { id: 'reboque_description', name: 'Descrição do reboque' },
-            { id: 'reboque_type_wheelset', name: 'Tipo do veículo' },
-            { id: 'reboque_type_body', name: 'Tipo do veículo' },
-            { id: 'reboque_weight', name: 'Peso' },
-            { id: 'reboque_capacity', name: 'Capacidade' },
-            { id: 'reboque_rntrc', name: 'RNTRC' },
-        ];
-    }
-    else {
+    } else {
         // Validação completa (tipo não especificado)
         requiredFields = [
             { id: 'driver_cpf', name: 'CPF Motorista' },
+            { id: 'driver_name', name: 'Nome do Motorista' },
+            { id: 'dest_razao_social', name: 'Razão Social do destinatário' },
             { id: 'dest_cpf_cnpj', name: 'CPF/CNPJ do destinatário' },
+            { id: 'dest_cep', name: 'CEP do destinatário' },
+            { id: 'dest_insc_estadual', name: 'Inscrição Estadual do destinatário' },
+            { id: 'dest_numero', name: 'Número do destinatário' },
             { id: 'note_fiscal_load_value', name: 'Valor da Carga' },
             { id: 'note_fiscal_quantity', name: 'Quantidade' },
             { id: 'note_fiscal_service_recipient', name: 'Valor do Serviço' },
             { id: 'note_fiscal_type', name: 'Tipo de Carga' },
             { id: 'note_fiscal_load_icms', name: 'Valor ICMS' },
+
+
             { id: 'plate', name: 'Veículo' },
+            { id: 'trucker_uf', name: 'UF do veículo' },
+            { id: 'renavam', name: 'renavam' },
+            { id: 'description', name: 'Descrição' },
+            { id: 'type_trucker', name: 'Tipo do veículo' },
+            { id: 'type_wheelset', name: 'Tipo do veículo' },
+            { id: 'type_body', name: 'Tipo do veículo' },
+            { id: 'type_owner', name: 'Tipo do veículo' },
+            { id: 'weight', name: 'Peso' },
+            { id: 'capacity', name: 'Capacidade' },
+            { id: 'rntrc', name: 'RNTRC' },
+
+
             { id: 'v_cbs', name: 'Valor CBSe' },
             { id: 'v_ibs', name: 'Valor IBS' }
         ];
@@ -463,6 +609,7 @@ function fazerLogin() {
             showNotification('❌ Erro de conexão com o servidor', 'error');
         });
 }
+
 
 // Registrar Destinatário
 function registrarDestinatario() {
@@ -555,29 +702,33 @@ function cadastrarMotorista() {
 
 // Cadastro de Caminhão
 function cadastrarCaminhao() {
-    if (!validateConfig("truck")) {
-        return;
-    }
+    // if (!validateConfig("truck")) {
+    //     return;
+    // }
     showNotification('🚀 Iniciando cadastro de caminhão...', 'info');
 
     const truckData = {
         type_wheelset: document.getElementById('type_wheelset').value,
         type_body: document.getElementById('type_body').value,
-        type_owner: 'independente',
+        type_owner: document.getElementById('type_owner').value,
         plate: document.getElementById('plate').value,
         trucker_uf: document.getElementById('trucker_uf').value,
         description: document.getElementById("description").value,
-        type_trucker: "Tração",
+        type_trucker: document.getElementById("type_trucker").value,
         weight: document.getElementById("weight").value,
         capacity: document.getElementById("capacity").value,
         rntrc: document.getElementById("rntrc").value,
-        renavam: document.getElementById("renavam").value,
         owner: {
-            cpf_cnpj: document.getElementById("owner_cpf").value,
-            razao_social: document.getElementById("owner_name").value,
+            cpf_cnpj: '00.000.000/0001-91',
+            razao_social: '',
+            cep: '',
+            insc_estadual: '123456789',
+            numero: '',
+            rua: '',
+            bairro: ''
         }
-
     };
+
 
     // Enviar requisição para executar o cadastro de motorista com os dados atuais
     fetch('/api/cadastro-caminhao', {
@@ -591,53 +742,6 @@ function cadastrarCaminhao() {
         .then(data => {
             if (data.success) {
                 showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
-            } else {
-                showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            showNotification('❌ Erro de conexão com o servidor', 'error');
-        });
-}
-
-function cadastrarReboque() {
-    // if (!validateConfig("reboque")) {
-    //     return;
-    // }
-    showNotification('🚀 Iniciando cadastro de reboque...', 'info');
-
-    const truckData = {
-        reboque_type_wheelset: "Outros",
-        reboque_type_body: document.getElementById('reboque_type_body').value,
-        reboque_type_owner: 'independente',
-        reboque_plate: document.getElementById('reboque_plate').value,
-        reboque_trucker_uf: document.getElementById('reboque_trucker_uf').value,
-        reboque_description: document.getElementById("reboque_description").value,
-        reboque_type_trucker: "Reboque",
-        reboque_weight: document.getElementById("reboque_weight").value,
-        reboque_rntrc: document.getElementById("reboque_rntrc").value,
-        reboque_renavam: document.getElementById("reboque_renavam").value,
-        reboque_capacity: document.getElementById("reboque_capacity").value,
-        owner: {
-            cpf_cnpj: document.getElementById("reboque_owner_cpf").value,
-            razao_social: document.getElementById("reboque_owner_name").value,
-        }
-
-    };
-
-    // Enviar requisição para executar o cadastro de motorista com os dados atuais
-    fetch('/api/cadastro-reboque', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(truckData)
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('✅ Reboque cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
             } else {
                 showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
             }
@@ -680,102 +784,6 @@ function criarCTE() {
         },
         trucker: {
             plate: document.getElementById('plate').value,
-        },
-        docs: {
-            access_key: accessKeys
-        },
-        tax_reform: {
-            Valor_CBS: document.getElementById('v_cbs').value,
-            Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
-        },
-        timerDuration: document.getElementById('timer_duration').value
-    };
-
-    // Enviar requisição para executar a criação de CTe com os dados atuais
-    fetch('/api/create-cte', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(config)
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification(' CTe criado com sucesso! Pode criar o próximo.', 'success');
-            } else {
-                showNotification(' Erro ao criar CTe', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            showNotification(' Erro de conexão com o servidor', 'error');
-        });
-}
-
-// Criação de CTe
-function criarCompleta() {
-    if (!validateConfig("cte")) {
-        return;
-    }
-
-    showNotification(' Iniciando criação de CTe...', 'info');
-
-    const config = {
-        driver: {
-            cpf: document.getElementById('driver_cpf').value,
-            name: document.getElementById('driver_name').value
-        },
-        destination: {
-            cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
-            razao_social: document.getElementById('dest_razao_social').value,
-            cep: document.getElementById('dest_cep').value,
-            insc_estadual: document.getElementById('dest_insc_estadual').value,
-            numero: document.getElementById('dest_numero').value,
-            rua: document.getElementById('dest_rua').value,
-            bairro: document.getElementById('dest_bairro').value
-        },
-        note_fiscal: {
-            load_value: document.getElementById('note_fiscal_load_value').value,
-            quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
-            load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
-            service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value),
-            type: document.getElementById('note_fiscal_type').value,
-            load_icms: document.getElementById('note_fiscal_load_icms').value
-        },
-        trucker: {
-            type_wheelset: document.getElementById('type_wheelset').value,
-            type_body: document.getElementById('type_body').value,
-            type_owner: 'independente',
-            plate: document.getElementById('plate').value,
-            trucker_uf: document.getElementById('trucker_uf').value,
-            description: document.getElementById("description").value,
-            type_trucker: "Tração",
-            weight: document.getElementById("weight").value,
-            capacity: document.getElementById("capacity").value,
-            rntrc: document.getElementById("rntrc").value,
-            renavam: document.getElementById("renavam").value,
-            owner: {
-                cpf_cnpj: document.getElementById("owner_cpf").value,
-                razao_social: document.getElementById("owner_name").value,
-            }
-        },
-        reboque: {
-            reboque_type_wheelset: "Outros",
-            reboque_type_body: document.getElementById('reboque_type_body').value,
-            reboque_type_owner: 'independente',
-            reboque_plate: document.getElementById('reboque_plate').value,
-            reboque_trucker_uf: document.getElementById('reboque_trucker_uf').value,
-            reboque_description: document.getElementById("reboque_description").value,
-            reboque_type_trucker: "Reboque",
-            reboque_weight: document.getElementById("reboque_weight").value,
-            reboque_rntrc: document.getElementById("reboque_rntrc").value,
-            reboque_renavam: document.getElementById("reboque_renavam").value,
-            reboque_capacity: document.getElementById("reboque_capacity").value,
-            owner: {
-                cpf_cnpj: document.getElementById("reboque_owner_cpf").value,
-                razao_social: document.getElementById("reboque_owner_name").value,
-            },
         },
         docs: {
             access_key: accessKeys

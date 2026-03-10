@@ -27,6 +27,38 @@
             </div>
         </div>
 
+        <!-- Seção de Processamento de XML -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-icon">📄</span>
+                Processamento de XML
+            </div>
+            <div class="xml-processor">
+                <div class="form-group">
+                    <label>📁 Selecione o arquivo XML da Nota Fiscal:</label>
+                    <input type="file" id="xml_file" accept=".xml,.XML" 
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                    <div id="file_info" style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 5px; display: none;">
+                        <strong>📁 Arquivo selecionado:</strong> <span id="file_name"></span>
+                    </div>
+                    <!-- Campo hidden para armazenar o conteúdo do XML -->
+                    <textarea id="xml_content" style="display: none;"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="button" onclick="processarXML()" 
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                        🔄 Processar XML
+                    </button>
+                    <button type="button" onclick="limparXML()" 
+                        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;">
+                        🧹 Limpar
+                    </button>
+                </div>
+                <div id="xml_result" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
+            </div>
+        </div>
+
         <!-- Seção de Cadastros Rápidos -->
         <div class="section">
             <div class="section-title">
