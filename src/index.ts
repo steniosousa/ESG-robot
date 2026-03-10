@@ -637,7 +637,6 @@ const creations = {
     }
 }
 
-
 async function findAndSelectOption(placeholder: string, value: string) {
     while (isPaused) {
         await new Promise(resolve => setTimeout(resolve, 100));

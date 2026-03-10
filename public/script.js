@@ -712,3 +712,99 @@ function criarCTE() {
             showNotification(' Erro de conexão com o servidor', 'error');
         });
 }
+
+// Criação de CTe
+function criarCompleta() {
+    if (!validateConfig("cte")) {
+        return;
+    }
+
+    showNotification(' Iniciando criação de CTe...', 'info');
+
+    const config = {
+        driver: {
+            cpf: document.getElementById('driver_cpf').value,
+            name: document.getElementById('driver_name').value
+        },
+        destination: {
+            cpf_cnpj: document.getElementById('dest_cpf_cnpj').value,
+            razao_social: document.getElementById('dest_razao_social').value,
+            cep: document.getElementById('dest_cep').value,
+            insc_estadual: document.getElementById('dest_insc_estadual').value,
+            numero: document.getElementById('dest_numero').value,
+            rua: document.getElementById('dest_rua').value,
+            bairro: document.getElementById('dest_bairro').value
+        },
+        note_fiscal: {
+            load_value: document.getElementById('note_fiscal_load_value').value,
+            quantity: parseInt(document.getElementById('note_fiscal_quantity').value),
+            load_service: parseFloat(document.getElementById('note_fiscal_load_value').value),
+            service_recipient: parseFloat(document.getElementById('note_fiscal_service_recipient').value),
+            type: document.getElementById('note_fiscal_type').value,
+            load_icms: document.getElementById('note_fiscal_load_icms').value
+        },
+        trucker: {
+            type_wheelset: document.getElementById('type_wheelset').value,
+            type_body: document.getElementById('type_body').value,
+            type_owner: 'independente',
+            plate: document.getElementById('plate').value,
+            trucker_uf: document.getElementById('trucker_uf').value,
+            description: document.getElementById("description").value,
+            type_trucker: "Tração",
+            weight: document.getElementById("weight").value,
+            capacity: document.getElementById("capacity").value,
+            rntrc: document.getElementById("rntrc").value,
+            renavam: document.getElementById("renavam").value,
+            owner: {
+                cpf_cnpj: document.getElementById("owner_cpf").value,
+                razao_social: document.getElementById("owner_name").value,
+            }
+        },
+        reboque: {
+            reboque_type_wheelset: "Outros",
+            reboque_type_body: document.getElementById('reboque_type_body').value,
+            reboque_type_owner: 'independente',
+            reboque_plate: document.getElementById('reboque_plate').value,
+            reboque_trucker_uf: document.getElementById('reboque_trucker_uf').value,
+            reboque_description: document.getElementById("reboque_description").value,
+            reboque_type_trucker: "Reboque",
+            reboque_weight: document.getElementById("reboque_weight").value,
+            reboque_rntrc: document.getElementById("reboque_rntrc").value,
+            reboque_renavam: document.getElementById("reboque_renavam").value,
+            reboque_capacity: document.getElementById("reboque_capacity").value,
+            owner: {
+                cpf_cnpj: document.getElementById("reboque_owner_cpf").value,
+                razao_social: document.getElementById("reboque_owner_name").value,
+            },
+        },
+        docs: {
+            access_key: accessKeys
+        },
+        tax_reform: {
+            Valor_CBS: document.getElementById('v_cbs').value,
+            Valor_IBS_UF_IBS: document.getElementById('v_ibs').value
+        },
+        timerDuration: document.getElementById('timer_duration').value
+    };
+
+    // Enviar requisição para executar a criação de CTe com os dados atuais
+    fetch('/api/create-cte', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(config)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(' CTe criado com sucesso! Pode criar o próximo.', 'success');
+            } else {
+                showNotification(' Erro ao criar CTe', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            showNotification(' Erro de conexão com o servidor', 'error');
+        });
+}
