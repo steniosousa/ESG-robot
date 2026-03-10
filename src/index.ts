@@ -225,6 +225,13 @@ const creations = {
             await timer();
             await clearAndType("RAZAOSOCIAL", name);
         }
+        const canClickCreate = await requestPermission("Salvar motorista?");
+        if (canClickCreate) {
+            await page.click("egs-button-save-popup button");
+        } else {
+            return
+        }
+
     },
     "create_destination": async () => {
         try {
@@ -311,6 +318,12 @@ const creations = {
                     await clearAndSelectOption('contribuinteIcms', "1")
                     await clearAndSelectOption('consumidorFinal', "0")
                 }
+                const canClickCreate = await requestPermission("Salvar destinatário?");
+                if (canClickCreate) {
+                    await page.click("egs-button-save-popup button");
+                } else {
+                    return
+                }
             }
         } catch (er) {
             console.log(er)
@@ -368,6 +381,12 @@ const creations = {
                     await clearAndSelectOption('contribuinteIcms', "1")
                     await clearAndSelectOption('consumidorFinal', "0")
                 }
+            }
+            const canClickCreate = await requestPermission("Salvar proprietário?");
+            if (canClickCreate) {
+                await page.click("egs-button-save-popup button");
+            } else {
+                return
             }
         } catch (er) {
             console.log(er)
@@ -534,6 +553,12 @@ const creations = {
             await page.waitForSelector('egs-gcadastro input.form-control:not([type="hidden"])', { timeout: 10000 });
             await findAndSelectOption("propVeiculo", general_config.trucker.owner.cpf_cnpj)
         }
+        const canClickCreate = await requestPermission("Salvar veículo?");
+        if (canClickCreate) {
+            await page.click("egs-button-save-popup button");
+        } else {
+            return
+        }
     },
     "create_reboque": async () => {
         await page.goto("https://app.egssistemas.com.br/veiculo", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -574,6 +599,12 @@ const creations = {
             await page.waitForSelector('egs-gcadastro input.form-control:not([type="hidden"])', { timeout: 10000 });
             await findAndSelectOption("propVeiculo", general_config.reboque.reboque_owner.cpf_cnpj)
         }
+        const canClickCreate = await requestPermission("Salvar reboque?");
+        if (canClickCreate) {
+            await page.click("egs-button-save-popup button");
+        } else {
+            return
+        }
     },
     "login": async () => {
         await page.goto("https://app.egssistemas.com.br/login", { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -598,6 +629,10 @@ const creations = {
         await creations.login()
         await creations.create_driver()
         await creations.create_destination()
+        await creations.create_owner(true)
+        await creations.create_owner(false)
+        await creations.create_trucker()
+        await creations.create_reboque()
         await creations.create_cte()
     }
 }
@@ -756,6 +791,7 @@ function createControlServer() {
             general_config.driver.name = driverData.name;
 
             await creations.create_driver();
+
             res.json({ success: true, message: 'Cadastro de motorista executado com sucesso' });
 
         } catch (error) {
