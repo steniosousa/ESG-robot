@@ -10,7 +10,6 @@ function lerArquivoXML(event) {
     
     // Mostrar informações do arquivo
     document.getElementById('file_info').style.display = 'block';
-    document.getElementById('file_name').textContent = file.name;
     
     const reader = new FileReader();
     reader.onload = function(e) {
