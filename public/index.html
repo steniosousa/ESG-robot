@@ -55,7 +55,6 @@
                         🧹 Limpar
                     </button>
                 </div>
-                <div id="xml_result" style="margin-top: 15px; padding: 10px; border-radius: 5px; display: none;"></div>
             </div>
         </div>
 
@@ -162,15 +161,15 @@
 
                     <div class="form-group">
                         <label>Valor da Carga</label>
-                        <input type="text" id="note_fiscal_load_value" placeholder="Digite o valor">
+                        <input type="number" id="note_fiscal_load_value" placeholder="Digite o valor">
                     </div>
                     <div class="form-group">
                         <label>Valor do ICMS:</label>
-                        <input type="text" id="note_fiscal_load_icms" placeholder="Ex: 18,13">
+                        <input type="number" id="note_fiscal_load_icms" placeholder="Ex: 18,13">
                     </div>
                     <div class="form-group">
                         <label>Quantidade</label>
-                        <input type="text" id="note_fiscal_quantity" placeholder="Digite a quantidade">
+                        <input type="number" id="note_fiscal_quantity" placeholder="Digite a quantidade">
                     </div>
                     <div class="form-group">
                         <label>Tipo de Carga</label>
@@ -178,7 +177,7 @@
                     </div>
                     <div class="form-group">
                         <label>Valores Bases</label>
-                        <input type="text" id="note_fiscal_service_recipient"
+                        <input type="number" id="note_fiscal_service_recipient"
                             placeholder="Valor Serviço / B.C. ICMS / BC IBS/CBS" oninput="calcPercent()">
                     </div>
 

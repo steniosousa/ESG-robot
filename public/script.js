@@ -29,7 +29,6 @@ function lerArquivoXML(event) {
 // Função para processar XML
 async function processarXML() {
     const xmlContent = document.getElementById('xml_content').value.trim();
-    const resultDiv = document.getElementById('xml_result');
     
     if (!xmlContent) {
         showNotification('❌ Selecione um arquivo XML para processar', 'error');
@@ -88,40 +87,14 @@ async function processarXML() {
                 updateKeysList();
             }
 
-            // Mostrar resultado
-            resultDiv.style.display = 'block';
-            resultDiv.style.background = '#d4edda';
-            resultDiv.style.border = '1px solid #c3e6cb';
-            resultDiv.style.color = '#155724';
-            resultDiv.innerHTML = `
-                <strong>✅ XML Processado com Sucesso!</strong><br>
-                📋 <strong>Dados Extraídos:</strong><br>
-                • Destinatário: ${result.data.destination.razao_social || 'Não encontrado'}<br>
-                • CNPJ: ${result.data.destination.cpf_cnpj || 'Não encontrado'}<br>
-                • Valor Total: R$ ${result.data.note_fiscal.load_value || '0,00'}<br>
-                • Chave de Acesso: ${result.data.docs.access_key[0] || 'Não encontrada'}
-            `;
             
             showNotification('✅ XML processado e campos preenchidos!', 'success');
             
         } else {
-            resultDiv.style.display = 'block';
-            resultDiv.style.background = '#f8d7da';
-            resultDiv.style.border = '1px solid #f5c6cb';
-            resultDiv.style.color = '#721c24';
-            resultDiv.innerHTML = `<strong>❌ Erro:</strong> ${result.message}`;
-            
             showNotification(result.message, 'error');
         }
         
     } catch (error) {
-        console.error('Erro ao processar XML:', error);
-        resultDiv.style.display = 'block';
-        resultDiv.style.background = '#f8d7da';
-        resultDiv.style.border = '1px solid #f5c6cb';
-        resultDiv.style.color = '#721c24';
-        resultDiv.innerHTML = `<strong>❌ Erro de conexão:</strong> ${error.message}`;
-        
         showNotification('❌ Erro ao processar XML', 'error');
     }
 }
@@ -129,7 +102,6 @@ async function processarXML() {
 // Função para limpar campo XML
 function limparXML() {
     document.getElementById('xml_content').value = '';
-    document.getElementById('xml_result').style.display = 'none';
     document.getElementById('file_info').style.display = 'none';
     document.getElementById('xml_file').value = '';
     showNotification('🧹 Campos XML limpos', 'info');
