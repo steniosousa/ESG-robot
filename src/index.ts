@@ -93,7 +93,7 @@ function processarXML(xmlContent: string) {
         const chaveAcesso = extrairCampo('chNFe')
         // Extrair dados do destinatário
         const destinatarioCNPJ = xmlContent.match(/<dest>[\s\S]*?<CNPJ>([^<]*)<\/CNPJ>[\s\S]*?<\/dest>/)?.[1] || '';
-
+        const destinatarioIE = xmlContent.match(/<dest>[\s\S]*?<IE>([^<]+)<\/IE>[\s\S]*?<\/dest>/)?.[1] || '';
         // Extrair dados da nota fiscal
         const valorTotal = extrairCampo('vNF') || '';
         const quantidade = extrairCampo('qVol') || '';
@@ -102,22 +102,24 @@ function processarXML(xmlContent: string) {
         const valorBruto = extrairCampo('pesoB') || '';
         const destinatarioUF = xmlContent.match(/<dest>[\s\S]*?<enderDest>[\s\S]*?<UF>([^<]*)<\/UF>[\s\S]*?<\/enderDest>[\s\S]*?<\/dest>/)?.[1] || '';
 
+        const custoPorEstado = [
+            {
+                UF: "CE", value: 0.69
+            },
+            {
+                UF: "PE", value: 0.62
+            }
+        ]
 
-        const custoPorEstado = [{
-            UF: "CE", value: 0.69
-        },
-        {
-            UF: "PE", value: 0.62
-        }]
-
-        // Atualizar configuração geral
         general_config.destination.cpf_cnpj = formatarCNPJ(destinatarioCNPJ);
+        general_config.destination.insc_estadual = destinatarioIE;
         general_config.note_fiscal.load_value = valorTotal;
         general_config.note_fiscal.quantity = quantidade;
         general_config.note_fiscal.load_service = valorTotal;
         general_config.note_fiscal.type = tipoProduto;
         general_config.note_fiscal.service_recipient = (parseFloat(valorBruto) * (custoPorEstado.find((item) => item.UF === destinatarioUF)?.value || 0)).toString();
         general_config.note_fiscal.load_icms = valorICMS;
+        general_config.destination.insc_estadual = destinatarioIE
 
         if (chaveAcesso) {
             general_config.docs.access_key = [chaveAcesso];

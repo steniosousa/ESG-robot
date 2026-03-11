@@ -52,7 +52,6 @@ async function processarXML() {
             // Preencher campos com os dados extraídos
             if (result.data.destination.cpf_cnpj) {
                 document.getElementById('dest_cpf_cnpj').value = result.data.destination.cpf_cnpj;
-                // Dispara o evento para formatar e buscar CNPJ
                 document.getElementById('dest_cpf_cnpj').dispatchEvent(new Event('input'));
             }
             
@@ -75,15 +74,24 @@ async function processarXML() {
             if (result.data.note_fiscal.load_icms) {
                 document.getElementById('note_fiscal_load_icms').value = result.data.note_fiscal.load_icms;
             }
+
+            if(result.data.destination.insc_estadual){
+                document.getElementById('dest_insc_estadual').value = result.data.destination.insc_estadual;
+
+            }
             
             if (result.data.note_fiscal.service_recipient) {
                 document.getElementById('note_fiscal_service_recipient').value = result.data.note_fiscal.service_recipient;
                 calcPercent(); // Recalcula percentuais
             }
             
-            // Adicionar chaves de acesso
+            // Adicionar chaves de acesso sem duplicar
             if (result.data.docs.access_key && result.data.docs.access_key.length > 0) {
-                accessKeys = [...accessKeys, ...result.data.docs.access_key];
+                result.data.docs.access_key.forEach(key => {
+                    if (!accessKeys.includes(key)) {
+                        accessKeys.push(key);
+                    }
+                });
                 updateKeysList();
             }
 
