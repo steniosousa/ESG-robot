@@ -436,7 +436,24 @@ function processarXML(xmlContent: string) {
         const destinatarioUF = xmlContent.match(/<dest>[\s\S]*?<enderDest>[\s\S]*?<UF>([^<]*)<\/UF>[\s\S]*?<\/enderDest>[\s\S]*?<\/dest>/)?.[1] || '';
         const destinatarioMunicipio = xmlContent.match(/<dest>[\s\S]*?<enderDest>[\s\S]*?<xMun>([^<]*)<\/xMun>[\s\S]*?<\/enderDest>[\s\S]*?<\/dest>/)?.[1] || '';
 
-        console.log(destinatarioMunicipio, destinatarioUF, valorBruto,(parseFloat(valorBruto) / 1000))
+        const emitenteCNPJ = xmlContent.match(/<emit>[\s\S]*?<CNPJ>([^<]*)<\/CNPJ>[\s\S]*?<\/emit>/)?.[1] || '';
+        const cidadeSaida = xmlContent.match(/<emit>[\s\S]*?<enderEmit>[\s\S]*?<xMun>([^<]*)<\/xMun>[\s\S]*?<\/enderEmit>[\s\S]*?<\/emit>/)?.[1] || '';
+
+
+        let valueForMultiplicate;
+        if (emitenteCNPJ === "07332190000860") {
+            console.log("Cidade de saida:", cidadeSaida);
+        } else {
+            valueForMultiplicate = custoPorEstado.find((item) => item.UF === destinatarioUF && item.CITY === destinatarioMunicipio)?.VALUE;
+        }
+
+        if (!valueForMultiplicate) {
+            throw new Error("Valor não encontrado para a cidade")
+            return;
+        }
+
+
+        console.log(destinatarioMunicipio, destinatarioUF, valorBruto, (parseFloat(valorBruto) / 1000))
 
         general_config.destination.cpf_cnpj = formatarCNPJ(destinatarioCNPJ);
         general_config.destination.insc_estadual = destinatarioIE;
@@ -444,7 +461,7 @@ function processarXML(xmlContent: string) {
         general_config.note_fiscal.quantity = quantidade;
         general_config.note_fiscal.load_service = valorTotal;
         general_config.note_fiscal.type = tipoProduto;
-        general_config.note_fiscal.service_recipient = ((parseFloat(valorBruto) / 1000) * (custoPorEstado.find((item) => item.UF === destinatarioUF && item.CITY === destinatarioMunicipio)?.VALUE || 0)).toFixed(2).toString();
+        general_config.note_fiscal.service_recipient = ((parseFloat(valorBruto) / 1000) * (valueForMultiplicate)).toFixed(2).toString();
         general_config.note_fiscal.load_icms = valorICMS;
         general_config.destination.insc_estadual = destinatarioIE
 
