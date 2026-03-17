@@ -1248,12 +1248,12 @@ function createControlServer() {
             const truckData = req.body;
             general_config.trucker = truckData;
 
-            await creations.create_owner(false);
-            const continueButton = await requestPermission("Continuar cadastro");
+            // await creations.create_owner(false);
+            // const continueButton = await requestPermission("Continuar cadastro");
 
-            if (continueButton) {
-                await page.click("button[data-original-title='Copiar']");
-            }
+            // if (!continueButton) {
+            //     return res.json({ success: false, message: 'Cadastro de caminhão cancelado pelo usuário' });
+            // }
             await creations.create_trucker();
             res.json({ success: true, message: 'Cadastro de caminhão executado com sucesso' });
 

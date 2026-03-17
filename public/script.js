@@ -7,35 +7,35 @@ let accessKeys = [];
 function lerArquivoXML(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     // Mostrar informações do arquivo
     document.getElementById('file_info').style.display = 'block';
-    
+
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const xmlContent = e.target.result;
         document.getElementById('xml_content').value = xmlContent;
         showNotification(`📁 Arquivo "${file.name}" carregado com sucesso!`, 'success');
     };
-    
-    reader.onerror = function() {
+
+    reader.onerror = function () {
         showNotification('❌ Erro ao ler o arquivo XML', 'error');
     };
-    
+
     reader.readAsText(file);
 }
 
 // Função para processar XML
 async function processarXML() {
     const xmlContent = document.getElementById('xml_content').value.trim();
-    
+
     if (!xmlContent) {
         showNotification('❌ Selecione um arquivo XML para processar', 'error');
         return;
     }
 
     showNotification('🔄 Processando XML...', 'info');
-    
+
     try {
         const response = await fetch('/api/processar-xml', {
             method: 'POST',
@@ -53,37 +53,37 @@ async function processarXML() {
                 document.getElementById('dest_cpf_cnpj').value = result.data.destination.cpf_cnpj;
                 document.getElementById('dest_cpf_cnpj').dispatchEvent(new Event('input'));
             }
-            
+
             if (result.data.destination.razao_social) {
                 document.getElementById('dest_razao_social').value = result.data.destination.razao_social;
             }
-            
+
             if (result.data.note_fiscal.load_value) {
                 document.getElementById('note_fiscal_load_value').value = result.data.note_fiscal.load_value;
             }
-            
+
             if (result.data.note_fiscal.quantity) {
                 document.getElementById('note_fiscal_quantity').value = result.data.note_fiscal.quantity;
             }
-            
+
             if (result.data.note_fiscal.type) {
                 document.getElementById('note_fiscal_type').value = result.data.note_fiscal.type;
             }
-            
+
             if (result.data.note_fiscal.load_icms) {
                 document.getElementById('note_fiscal_load_icms').value = result.data.note_fiscal.load_icms;
             }
 
-            if(result.data.destination.insc_estadual){
+            if (result.data.destination.insc_estadual) {
                 document.getElementById('dest_insc_estadual').value = result.data.destination.insc_estadual;
 
             }
-            
+
             if (result.data.note_fiscal.service_recipient) {
                 document.getElementById('note_fiscal_service_recipient').value = result.data.note_fiscal.service_recipient;
                 calcPercent(); // Recalcula percentuais
             }
-            
+
             // Adicionar chaves de acesso sem duplicar
             if (result.data.docs.access_key && result.data.docs.access_key.length > 0) {
                 result.data.docs.access_key.forEach(key => {
@@ -94,13 +94,13 @@ async function processarXML() {
                 updateKeysList();
             }
 
-            
+
             showNotification('✅ XML processado e campos preenchidos!', 'success');
-            
+
         } else {
             showNotification(result.message, 'error');
         }
-        
+
     } catch (error) {
         showNotification('❌ Erro ao processar XML', 'error');
     }
@@ -119,7 +119,7 @@ async function buscarCnpj(cnpj) {
     try {
         // Remove caracteres não numéricos do CNPJ
         const cnpjLimpo = cnpj.replace(/\D/g, '');
-        
+
         if (cnpjLimpo.length !== 14) {
             console.log('CNPJ incompleto, aguardando...');
             return;
@@ -689,19 +689,20 @@ function cadastrarCaminhao() {
     const truckData = {
         type_wheelset: document.getElementById('type_wheelset').value,
         type_body: document.getElementById('type_body').value,
-        type_owner: document.getElementById('type_owner').value,
+        type_owner: "independente",
         plate: document.getElementById('plate').value,
         trucker_uf: document.getElementById('trucker_uf').value,
         description: document.getElementById("description").value,
-        type_trucker: document.getElementById("type_trucker").value,
+        type_trucker: "Tração",
         weight: document.getElementById("weight").value,
         capacity: document.getElementById("capacity").value,
         rntrc: document.getElementById("rntrc").value,
+        renavam: document.getElementById("renavam").value,
         owner: {
-            cpf_cnpj: '00.000.000/0001-91',
-            razao_social: '',
+            cpf_cnpj: document.getElementById("owner_cpf").value,
+            razao_social: document.getElementById("owner_name").value,
             cep: '',
-            insc_estadual: '123456789',
+            insc_estadual: '',
             numero: '',
             rua: '',
             bairro: ''
@@ -722,7 +723,7 @@ function cadastrarCaminhao() {
             if (data.success) {
                 showNotification('✅ Motorista cadastrado com sucesso! Pode cadastrar o próximo.', 'success');
             } else {
-                showNotification('❌ Erro ao iniciar cadastro de motorista', 'error');
+                showNotification('❌ Erro ao iniciar cadastro de caminhao', 'error');
             }
         })
         .catch(error => {
