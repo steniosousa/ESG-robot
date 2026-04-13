@@ -400,6 +400,15 @@ const custoPorEstado = [
     { CITY: "FORTALEZA", UF: "CE", VALUE: 100.00 }
 ]
 
+const custoPorEstadoVicunha = [
+    { "COD": "1-3", "FRETE": "2.014,32", "IMPOSTO": 0 },
+    { "COD": "1-2", "FRETE": "5.762,40", "IMPOSTO": "691,49" },
+    { "COD": "2-1", "FRETE": "5.762,40", "IMPOSTO": "691,49" },
+    { "COD": "2-3", "FRETE": "5.762,40", "IMPOSTO": "691,49" },
+    { "COD": "3-1", "FRETE": "2.014,32", "IMPOSTO": 0 },
+    { "COD": "3-2", "FRETE": "5.762,40", "IMPOSTO": "691,49" },
+]
+
 
 let isPaused = false;
 let shouldStop = false;
@@ -440,20 +449,31 @@ function processarXML(xmlContent: string) {
         const cidadeSaida = xmlContent.match(/<emit>[\s\S]*?<enderEmit>[\s\S]*?<xMun>([^<]*)<\/xMun>[\s\S]*?<\/enderEmit>[\s\S]*?<\/emit>/)?.[1] || '';
 
 
-        let valueForMultiplicate;
+        let valueForMultiplicate: { COD: string, FRETE: string, IMPOSTO: string } | string;
         if (emitenteCNPJ === "07332190000860") {
-            console.log("Cidade de saida:", cidadeSaida);
+            const CODS = [{ "CITY": "MARACANAU", "COD": "1" }, { "CITY": "NATAL", "COD": "2" }, { "CITY": "PACAJUS", "COD": "3" }]
+            const codCreate = `${CODS.find((city) => city.CITY === cidadeSaida)?.COD}-${CODS.find((city) => city.CITY === destinatarioMunicipio)?.COD}`
+            const frete = custoPorEstadoVicunha.find((cod) => cod.COD == codCreate)
+            if (!frete) {
+                throw new Error("Frete não encontrado")
+            }
+            valueForMultiplicate = {
+                COD:frete.COD,
+                FRETE:frete.FRETE,
+                IMPOSTO:frete.IMPOSTO.toString()
+            }
         } else {
-            valueForMultiplicate = custoPorEstado.find((item) => item.UF === destinatarioUF && item.CITY === destinatarioMunicipio)?.VALUE;
+            const valueCal = custoPorEstado.find((item) => item.UF === destinatarioUF && item.CITY === destinatarioMunicipio)?.VALUE;
+            if(!valueCal){
+                throw new Error("Sem valor calculado")
+            }
+            valueForMultiplicate = valueCal.toString()
         }
 
         if (!valueForMultiplicate) {
             throw new Error("Valor não encontrado para a cidade")
-            return;
         }
 
-
-        console.log(destinatarioMunicipio, destinatarioUF, valorBruto, (parseFloat(valorBruto) / 1000))
 
         general_config.destination.cpf_cnpj = formatarCNPJ(destinatarioCNPJ);
         general_config.destination.insc_estadual = destinatarioIE;
@@ -461,8 +481,12 @@ function processarXML(xmlContent: string) {
         general_config.note_fiscal.quantity = quantidade;
         general_config.note_fiscal.load_service = valorTotal;
         general_config.note_fiscal.type = tipoProduto;
-        general_config.note_fiscal.service_recipient = ((parseFloat(valorBruto) / 1000) * (valueForMultiplicate)).toFixed(2).toString();
-        general_config.note_fiscal.load_icms = valorICMS;
+        general_config.note_fiscal.service_recipient = emitenteCNPJ === "07332190000860" ? 
+            (typeof valueForMultiplicate === 'object' ? valueForMultiplicate.FRETE : valueForMultiplicate) : 
+            ((parseFloat(valorBruto) / 1000) * (typeof valueForMultiplicate === 'object' ? parseFloat(valueForMultiplicate.FRETE) : parseFloat(valueForMultiplicate))).toFixed(2).toString();
+        general_config.note_fiscal.load_icms = emitenteCNPJ === "07332190000860" ? 
+            (typeof valueForMultiplicate === 'object' ? valueForMultiplicate.IMPOSTO : valorICMS) : 
+            valorICMS;
         general_config.destination.insc_estadual = destinatarioIE
 
         if (chaveAcesso) {
