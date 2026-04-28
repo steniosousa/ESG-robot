@@ -28,7 +28,7 @@ function createWindow() {
     // Esperar o servidor iniciar e depois carregar a página real
     setTimeout(() => {
         loadApplication();
-    }, 3000); // 3 segundos para o servidor iniciar
+    }, 3333); // 3 segundos para o servidor iniciar
 
     mainWindow.on('closed', () => {
         mainWindow = null;
@@ -40,7 +40,7 @@ function createWindow() {
 
 function loadApplication() {
     // Tentar carregar a aplicação web
-    mainWindow.loadURL('http://localhost:3000')
+    mainWindow.loadURL('http://localhost:3333')
         .then(() => {
             console.log('Aplicação carregada com sucesso');
             
@@ -54,7 +54,7 @@ function loadApplication() {
             
             // Tentar novamente após mais tempo
             setTimeout(() => {
-                mainWindow.loadURL('http://localhost:3000')
+                mainWindow.loadURL('http://localhost:3333')
                     .then(() => {
                         console.log('Aplicação carregada na segunda tentativa');
                     })
@@ -72,23 +72,75 @@ function startServer() {
     
     // Sempre iniciar o servidor, tanto em dev quanto em produção
     console.log('Iniciando servidor embutido...');
-    serverProcess = spawn('node', ['server.js'], {
-        stdio: 'inherit',
-        shell: true,
-        cwd: __dirname
-    });
     
-    serverProcess.on('error', (error) => {
-        console.error('Erro ao iniciar o servidor:', error);
+    // Em ambiente de desenvolvimento, usar ts-node
+    // Em produção, executar o servidor diretamente no processo atual
+    const isDev = process.env.NODE_ENV !== 'production';
+    
+    if (isDev) {
+        // Em desenvolvimento, iniciar como processo separado
+        const nodeExecutable = 'node';
+        const serverScript = 'src/index.ts';
+        const args = ['-r', 'ts-node/register', serverScript];
         
-        // Tentar método alternativo
-        console.log('Tentando método alternativo...');
-        serverProcess = spawn('node', ['server.js'], {
+        console.log(`Executando: ${nodeExecutable} ${args.join(' ')}`);
+        
+        serverProcess = spawn(nodeExecutable, args, {
             stdio: 'inherit',
             shell: false,
             cwd: __dirname
         });
-    });
+        
+        serverProcess.on('error', (error) => {
+            console.error('Erro ao iniciar o servidor:', error);
+        });
+    } else {
+        // Em produção, executar o servidor diretamente no processo atual
+        console.log('Executando servidor diretamente no processo...');
+        try {
+            // Carregar e executar o servidor compilado
+            const app = require('electron').app || require('@electron/remote').app;
+            const appPath = app ? app.getAppPath() : __dirname;
+            const serverPath = path.join(appPath, 'dist', 'index.js');
+            console.log('Tentando carregar servidor de:', serverPath);
+            
+            // Limpar cache do require para garantir recarregamento
+            delete require.cache[require.resolve(serverPath)];
+            require(serverPath);
+            console.log('Servidor iniciado com sucesso');
+        } catch (error) {
+            console.error('Erro ao iniciar servidor:', error);
+            
+            // Tentar carregar o TypeScript como fallback
+            try {
+                require('ts-node/register');
+                require('./src/index.ts');
+                console.log('Servidor TypeScript iniciado como fallback');
+            } catch (fallbackError) {
+                console.error('Erro no fallback:', fallbackError);
+                
+                // Último recurso - tentar iniciar servidor Express diretamente
+                try {
+                    console.log('Tentando iniciar servidor manualmente...');
+                    const express = require('express');
+                    const app = express();
+                    const port = 3333;
+                    
+                    app.use(express.static(path.join(__dirname, 'public')));
+                    
+                    app.get('/', (req, res) => {
+                        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+                    });
+                    
+                    app.listen(port, () => {
+                        console.log(`🌐 Servidor manual rodando em http://localhost:${port}`);
+                    });
+                } catch (manualError) {
+                    console.error('Erro no servidor manual:', manualError);
+                }
+            }
+        }
+    }
     
     serverProcess.on('close', (code) => {
         console.log(`Servidor encerrado com código ${code}`);

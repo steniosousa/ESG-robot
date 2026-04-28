@@ -391,7 +391,7 @@ function showNotification(message, type = 'info') {
 
     setTimeout(() => {
         notification.remove();
-    }, 3000);
+    }, 3333);
 }
 
 updateStatus();

@@ -7,8 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/index.ts",
     "dev": "nodemon --watch src --ext ts --exec \"ts-node\" src/index.ts",
+    "compile": "tsc",
     "electron": "electron .",
     "electron-dev": "set NODE_ENV=development && electron .",
+    "prebuild": "npm run compile",
     "build": "electron-builder",
     "build-win": "electron-builder --win",
     "dist": "npm run build"
@@ -27,6 +29,7 @@
       "main.js",
       "loading.html",
       "src/**/*",
+      "dist/**/*",
       "public/**/*",
       "node_modules/**/*",
       "package.json"

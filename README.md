@@ -68,7 +68,7 @@ Após iniciar o robô, **duas janelas** serão abertas:
 1. **Janela do Chrome** (esquerda): Onde o robô executa as ações
 2. **Janela de Controle** (direita): Onde você controla o processo
 
-Acesse também: **http://localhost:3000** (se a janela não abrir automaticamente)
+Acesse também: **http://localhost:3333** (se a janela não abrir automaticamente)
 
 ### 🔐 **Sistema de Permissões**
 
@@ -172,7 +172,7 @@ A interface web exibe:
 
 ## 📝 Notas Importantes
 
-- O servidor web roda na porta 3000
+- O servidor web roda na porta 3333
 - **A janela de controle é posicionada automaticamente ao lado**
 - **Cada solicitação tem timeout de 30 segundos**
 - **Se não responder, a permissão é negada automaticamente**

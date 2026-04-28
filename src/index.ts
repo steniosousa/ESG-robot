@@ -1352,7 +1352,7 @@ function createControlServer() {
         res.sendFile(path.join(__dirname, '../public/index.html'));
     });
 
-    const port = 3000;
+    const port = 3333;
     app.listen(port, () => {
         console.log(`🌐 Servidor de controle rodando em http://localhost:${port}`);
     });
@@ -1380,11 +1380,11 @@ async function openControlWindow() {
     if (pages.length > 0) {
         controlPage = pages[0];
         await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-        await controlPage.goto("http://localhost:3000");
+        await controlPage.goto("http://localhost:3333");
     } else {
         controlPage = await controlBrowser.newPage();
         await controlPage.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-        await controlPage.goto("http://localhost:3000");
+        await controlPage.goto("http://localhost:3333");
     }
 
 
